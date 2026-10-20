@@ -19,12 +19,19 @@ public final class CategoryFilters {
 
     public static void populate(Context context, ChipGroup group, List<Category> categories,
                                  long selectedId, java.util.function.LongConsumer onSelected) {
+        populate(context, group, categories, TransactionType.DESPESA, selectedId, onSelected);
+    }
+
+    public static void populate(Context context, ChipGroup group, List<Category> categories, TransactionType type,
+                                 long selectedId, java.util.function.LongConsumer onSelected) {
         group.setOnCheckedStateChangeListener(null);
+        group.setSingleSelection(true);
+        group.setSelectionRequired(true);
         group.removeAllViews();
         add(context, group, context.getString(R.string.category_filter_all), ALL, selectedId == ALL);
         if (categories != null) {
             for (Category category : categories) {
-                if (category.getCategory_type() != TransactionType.DESPESA) continue;
+                if (category.getCategory_type() != type || category.getCategory_parent_id() != null) continue;
                 add(context, group, category.getCategory_name(), category.getCategory_id(),
                         category.getCategory_id() == selectedId);
             }

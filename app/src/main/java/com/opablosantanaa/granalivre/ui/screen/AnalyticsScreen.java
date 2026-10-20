@@ -43,6 +43,7 @@ public class AnalyticsScreen extends Screen {
     private int period = MONTH;
     private int chartSelected = -1;
     private long categoryFilter;
+    private TransactionType categoryType = TransactionType.DESPESA;
     private static final int CHART_INCOME = 0xFF4ADE80;
     private static final int CHART_EXPENSE = 0xFFF87171;
     private long[] chartIncome = new long[0];
@@ -91,15 +92,34 @@ public class AnalyticsScreen extends Screen {
             chartSelected = -1;
             renderLater(view);
         });
+        SegmentedControl typeControl = view.findViewById(R.id.category_type);
+        typeControl.setOptions(getString(R.string.analytics_type_expense), getString(R.string.analytics_type_income));
+        typeControl.setPalette(color(R.color.gl_on_silk_line), color(R.color.gl_on_silk_secondary),
+                color(R.color.gl_on_silk), color(R.color.gl_silk_backdrop));
+        typeControl.setContentDescription(getString(R.string.analytics_type_choice));
+        typeControl.select(categoryType == TransactionType.RECEITA ? 1 : 0, false);
+        typeControl.setOnChange(index -> {
+            TransactionType next = index == 1 ? TransactionType.RECEITA : TransactionType.DESPESA;
+            if (next == categoryType) return;
+            categoryType = next;
+            categoryFilter = 0;
+            chartSelected = -1;
+            populateCategories(view, categoryChips);
+            renderLater(view);
+        });
         vm.categoryList.observe(getViewLifecycleOwner(), categories -> {
-            CategoryFilters.populate(requireContext(), categoryChips, categories, categoryFilter, id -> {
-                categoryFilter = id;
-                chartSelected = -1;
-                renderLater(view);
-            });
+            populateCategories(view, categoryChips);
             renderLater(view);
         });
         vm.budgetList.observe(getViewLifecycleOwner(), v -> renderLater(view));
+    }
+
+    private void populateCategories(View view, com.google.android.material.chip.ChipGroup chips) {
+        CategoryFilters.populate(requireContext(), chips, vm().categoryList.getValue(), categoryType, categoryFilter, id -> {
+            categoryFilter = id;
+            chartSelected = -1;
+            renderLater(view);
+        });
     }
 
     private void renderLegend(View view) {
@@ -118,9 +138,10 @@ public class AnalyticsScreen extends Screen {
     private void add(FinancialTransaction t, int index, long[] expenses, long[] incomes) {
         if (index < 0 || index >= expenses.length) return;
         if (categoryFilter != 0) {
-            if (t.getTransaction_type() != TransactionType.DESPESA
+            if (t.getTransaction_type() != categoryType
                     || !matchesCategory(t.getCategory_id(), categoryFilter)) return;
-            expenses[index] += t.getTransaction_amount_cents();
+            if (categoryType == TransactionType.RECEITA) incomes[index] += t.getTransaction_amount_cents();
+            else expenses[index] += t.getTransaction_amount_cents();
         } else if (t.getTransaction_type() == TransactionType.RECEITA) {
             incomes[index] += t.getTransaction_amount_cents();
         } else {
@@ -233,9 +254,11 @@ public class AnalyticsScreen extends Screen {
             resultCaption.setText(getString(R.string.analytics_result_caption,
                     Money.whole(totalIncome), Money.whole(totalExpense)));
         } else {
-            resultLabel.setText(R.string.analytics_category_result);
+            boolean incomeType = categoryType == TransactionType.RECEITA;
+            resultLabel.setText(incomeType ? R.string.analytics_category_income_result : R.string.analytics_category_result);
             resultCaption.setText(getString(R.string.analytics_category_result_caption,
-                    categoryName(vm.categoryList.getValue(), categoryFilter), Money.whole(totalExpense)));
+                    categoryName(vm.categoryList.getValue(), categoryFilter),
+                    Money.whole(incomeType ? totalIncome : totalExpense)));
         }
         renderLegend(view);
 
@@ -251,6 +274,7 @@ public class AnalyticsScreen extends Screen {
                 Character.toUpperCase(name.charAt(0)) + name.substring(1));
         Map<Long, Long> limits = new HashMap<>();
         long limit = 0;
+        long categoryFilter = categoryType == TransactionType.DESPESA ? this.categoryFilter : 0;
         if (budgets != null) {
             for (Budget b : budgets) {
                 if (categoryFilter != 0 && (categoryFilter < 0 || b.getCategory_id() != categoryFilter)) continue;
@@ -285,8 +309,11 @@ public class AnalyticsScreen extends Screen {
         List<Category> categories = vm().categoryList.getValue();
         Map<Long, Long> totals = new HashMap<>();
         long sum = 0;
+        boolean incomeType = categoryType == TransactionType.RECEITA;
+        ((TextView) view.findViewById(R.id.sheet_title)).setText(
+                incomeType ? R.string.analytics_by_income_category : R.string.analytics_by_category);
         for (FinancialTransaction t : history) {
-            if (!isExpense(t, from, to)) continue;
+            if (t.getTransaction_type() != categoryType || !inRange(t, from, to)) continue;
             if (categoryFilter != 0 && !matchesCategory(t.getCategory_id(), categoryFilter)) continue;
             long key = t.getCategory_id() == null ? -1L : t.getCategory_id();
             Long current = totals.get(key);
@@ -306,7 +333,7 @@ public class AnalyticsScreen extends Screen {
             int tint = CategoryStyle.color(category);
             View row = inflater.inflate(R.layout.item_category_row, list, false);
             ImageView icon = row.findViewById(R.id.icon);
-            icon.setImageResource(CategoryStyle.icon(category, TransactionType.DESPESA));
+            icon.setImageResource(CategoryStyle.icon(category, categoryType));
             icon.setImageTintList(ColorStateList.valueOf(tint));
             row.findViewById(R.id.icon_bg).setBackgroundTintList(ColorStateList.valueOf(CategoryStyle.tint(tint, 0x33)));
             String name = category == null ? getString(R.string.analytics_no_category) : category.getCategory_name();
@@ -314,10 +341,13 @@ public class AnalyticsScreen extends Screen {
             BarView bar = row.findViewById(R.id.bar);
             bar.setColors(0xFFE1EAE8, tint);
             bar.setProgress(max == 0 ? 0f : (float) entry.getValue() / max);
-            ((TextView) row.findViewById(R.id.amount)).setText(Money.styled(-entry.getValue(), muted));
+            long signed = incomeType ? entry.getValue() : -entry.getValue();
+            TextView amount = row.findViewById(R.id.amount);
+            amount.setText(Money.styled(signed, muted, incomeType));
+            amount.setTextColor(color(incomeType ? R.color.gl_income : R.color.gl_text));
             int percent = sum == 0 ? 0 : Math.round(100f * entry.getValue() / sum);
             ((TextView) row.findViewById(R.id.share)).setText(String.format(Locale.ROOT, "%d%%", percent));
-            row.setContentDescription(name + ", " + Money.plain(-entry.getValue()) + ", " + percent + "%");
+            row.setContentDescription(name + ", " + Money.plain(signed) + ", " + percent + "%");
             list.addView(row);
         }
         view.findViewById(R.id.empty).setVisibility(sorted.isEmpty() ? View.VISIBLE : View.GONE);
