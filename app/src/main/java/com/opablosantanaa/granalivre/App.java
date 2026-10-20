@@ -16,6 +16,8 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.opablosantanaa.granalivre.ui.MainViewModel;
@@ -84,7 +86,8 @@ public class App extends AppCompatActivity {
         long userId = Session.userId(this);
         if (userId > 0) viewModel.setUserId(userId);
         if (savedInstanceState == null) {
-            show(userId > 0 ? new HomeScreen() : new SplashScreen());
+            if (userId > 0) showTab(TAB_HOME);
+            else show(new SplashScreen());
         }
     }
 
@@ -116,30 +119,48 @@ public class App extends AppCompatActivity {
         return Math.round(84 * getResources().getDisplayMetrics().density) + bottomInset;
     }
 
+    private static String tabTag(int tab) {
+        return "tab_" + tab;
+    }
+
+    private static Fragment createTab(int tab) {
+        if (tab == TAB_MOVES) return new MovesScreen();
+        if (tab == TAB_FIXED_EXPENSE) return RecurringScreen.expenses();
+        if (tab == TAB_FIXED_INCOME) return RecurringScreen.incomes();
+        if (tab == TAB_ANALYTICS) return new AnalyticsScreen();
+        if (tab == TAB_GOALS) return new GoalsScreen();
+        return new HomeScreen();
+    }
+
     public void show(Fragment screen) {
-        getSupportFragmentManager().beginTransaction()
-                .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out)
-                .replace(R.id.container, screen)
-                .commit();
+        FragmentManager manager = getSupportFragmentManager();
+        FragmentTransaction transaction = manager.beginTransaction().setReorderingAllowed(true);
+        for (Fragment fragment : manager.getFragments()) {
+            if (fragment.getId() == R.id.container) transaction.remove(fragment);
+        }
+        transaction.add(R.id.container, screen).commit();
     }
 
     public void showTab(int tab) {
-        Fragment current = getSupportFragmentManager().findFragmentById(R.id.container);
-        if (current instanceof Screen && ((Screen) current).tab() == tab) return;
-        Fragment next;
-        if (tab == TAB_MOVES) next = new MovesScreen();
-        else if (tab == TAB_FIXED_EXPENSE) next = RecurringScreen.expenses();
-        else if (tab == TAB_FIXED_INCOME) next = RecurringScreen.incomes();
-        else if (tab == TAB_ANALYTICS) next = new AnalyticsScreen();
-        else if (tab == TAB_GOALS) next = new GoalsScreen();
-        else next = new HomeScreen();
-        show(next);
+        FragmentManager manager = getSupportFragmentManager();
+        if (manager.isStateSaved()) return;
+        Fragment target = manager.findFragmentByTag(tabTag(tab));
+        if (target != null && target.isVisible()) return;
+        FragmentTransaction transaction = manager.beginTransaction().setReorderingAllowed(true);
+        for (Fragment fragment : manager.getFragments()) {
+            if (fragment.getId() != R.id.container || fragment == target) continue;
+            if (fragment instanceof Screen && ((Screen) fragment).tab() >= 0) transaction.hide(fragment);
+            else transaction.remove(fragment);
+        }
+        if (target == null) transaction.add(R.id.container, createTab(tab), tabTag(tab));
+        else transaction.show(target);
+        transaction.commit();
     }
 
     public void signedIn(long userId) {
         Session.signIn(this, userId);
         viewModel.setUserId(userId);
-        show(new HomeScreen());
+        showTab(TAB_HOME);
     }
 
     public boolean isNight() {
@@ -153,10 +174,10 @@ public class App extends AppCompatActivity {
         float screenDp = getResources().getDisplayMetrics().heightPixels / getResources().getDisplayMetrics().density;
         PrismView.Style style = new PrismView.Style();
         style.backdrop = ContextCompat.getColor(this, R.color.gl_silk_backdrop);
-        style.colors = new int[]{0xFF0B6E69, 0xFF2EC4B6, 0xFF70CFC2, 0xFFFFB547};
-        style.glow = 0.12f;
-        style.saturation = 1.5f;
-        style.timeScale = 0.5f;
+        style.colors = new int[]{0xFF0B6E69, 0xFF2EC4B6, 0xFF4FD1C5, 0xFF22A06B};
+        style.glow = 1.15f;
+        style.saturation = 1.7f;
+        style.timeScale = 0.62f;
         if (backdrop == Screen.BACKDROP_SPLASH) {
             style.scale = 3.6f;
             style.offsetY = -screenDp * 0.12f;

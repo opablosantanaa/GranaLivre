@@ -1,9 +1,11 @@
 package com.opablosantanaa.granalivre.ui.screen;
 
 import android.app.DatePickerDialog;
-import android.content.res.ColorStateList;
+import android.content.Context;
 import android.os.Bundle;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -43,23 +45,12 @@ public class SetupScreen extends Screen {
         TextInputLayout birthLayout = view.findViewById(R.id.birth_layout);
         TextInputLayout nameLayout = view.findViewById(R.id.name_layout);
         TextInputEditText name = view.findViewById(R.id.name);
-        int fieldText = color(R.color.gl_field_text);
-        int fieldHint = color(R.color.gl_field_hint);
-        ColorStateList fieldHintColors = ColorStateList.valueOf(fieldHint);
-        name.setTextColor(fieldText);
-        name.setHintTextColor(fieldHint);
-        nameLayout.setDefaultHintTextColor(fieldHintColors);
-        nameLayout.setHintTextColor(fieldHintColors);
         NestedScrollView scroll = (NestedScrollView) view;
         name.setOnFocusChangeListener((v, focused) -> {
             if (focused) revealOnKeyboard(scroll, view.findViewById(R.id.sheet));
         });
         name.setOnClickListener(v -> revealOnKeyboard(scroll, view.findViewById(R.id.sheet)));
         TextInputEditText birthField = view.findViewById(R.id.birth);
-        birthField.setTextColor(fieldText);
-        birthField.setHintTextColor(fieldHint);
-        birthLayout.setDefaultHintTextColor(fieldHintColors);
-        birthLayout.setHintTextColor(fieldHintColors);
         TextView error = view.findViewById(R.id.error);
         MaterialButton submit = view.findViewById(R.id.submit);
 
@@ -72,6 +63,15 @@ public class SetupScreen extends Screen {
         };
         birthField.setOnClickListener(pickBirth);
         birthLayout.setEndIconOnClickListener(pickBirth);
+        name.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId != EditorInfo.IME_ACTION_DONE) return false;
+            v.clearFocus();
+            InputMethodManager keyboard = (InputMethodManager) requireContext()
+                    .getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (keyboard != null) keyboard.hideSoftInputFromWindow(v.getWindowToken(), 0);
+            if (birth == null) pickBirth.onClick(birthField);
+            return true;
+        });
         view.findViewById(R.id.back).setOnClickListener(v -> app().show(new SplashScreen()));
 
         submit.setOnClickListener(v -> {

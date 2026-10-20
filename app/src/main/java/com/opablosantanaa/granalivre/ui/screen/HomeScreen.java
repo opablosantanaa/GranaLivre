@@ -122,23 +122,23 @@ public class HomeScreen extends Screen {
 
         MainViewModel vm = vm();
         vm.user.observe(getViewLifecycleOwner(), user -> bindUser(view, user));
-        vm.totalBalance.observe(getViewLifecycleOwner(), v -> refreshHero(view));
-        vm.accountList.observe(getViewLifecycleOwner(), v -> refreshList(view));
-        vm.cardList.observe(getViewLifecycleOwner(), v -> refreshTiles(view));
-        vm.cardDebts.observe(getViewLifecycleOwner(), v -> refreshTiles(view));
+        vm.totalBalance.observe(getViewLifecycleOwner(), v -> later("refreshHero", () -> refreshHero(view)));
+        vm.accountList.observe(getViewLifecycleOwner(), v -> later("refreshList", () -> refreshList(view)));
+        vm.cardList.observe(getViewLifecycleOwner(), v -> later("refreshTiles", () -> refreshTiles(view)));
+        vm.cardDebts.observe(getViewLifecycleOwner(), v -> later("refreshTiles", () -> refreshTiles(view)));
         vm.recurrenceList.observe(getViewLifecycleOwner(), v -> {
-            refreshTiles(view);
-            refreshWarning(view);
+            later("refreshTiles", () -> refreshTiles(view));
+            later("refreshWarning", () -> refreshWarning(view));
         });
-        vm.pendingList.observe(getViewLifecycleOwner(), v -> refreshWarning(view));
-        vm.categoryList.observe(getViewLifecycleOwner(), v -> refreshList(view));
-        vm.budgetList.observe(getViewLifecycleOwner(), v -> refreshWarning(view));
+        vm.pendingList.observe(getViewLifecycleOwner(), v -> later("refreshWarning", () -> refreshWarning(view)));
+        vm.categoryList.observe(getViewLifecycleOwner(), v -> later("refreshList", () -> refreshList(view)));
+        vm.budgetList.observe(getViewLifecycleOwner(), v -> later("refreshWarning", () -> refreshWarning(view)));
         vm.history.observe(getViewLifecycleOwner(), v -> {
             selectedBar = -1;
-            refreshHero(view);
-            refreshTiles(view);
-            refreshHeatmap(view);
-            refreshList(view);
+            later("refreshHero", () -> refreshHero(view));
+            later("refreshTiles", () -> refreshTiles(view));
+            later("refreshHeatmap", () -> refreshHeatmap(view));
+            later("refreshList", () -> refreshList(view));
         });
 
         view.findViewById(R.id.identity).setOnClickListener(v ->

@@ -2,7 +2,6 @@ package com.opablosantanaa.granalivre.ui;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.text.NumberFormat;
 import java.util.Locale;
 
 public final class Money {
@@ -12,13 +11,19 @@ public final class Money {
     private Money() {}
 
     private static String integerPart(long cents) {
-        NumberFormat format = NumberFormat.getIntegerInstance(BR);
-        format.setGroupingUsed(true);
-        return format.format(Math.abs(cents) / 100);
+        String digits = Long.toString(Math.abs(cents) / 100);
+        int length = digits.length();
+        if (length <= 3) return digits;
+        StringBuilder out = new StringBuilder(length + length / 3);
+        int head = length % 3 == 0 ? 3 : length % 3;
+        out.append(digits, 0, head);
+        for (int i = head; i < length; i += 3) out.append('.').append(digits, i, i + 3);
+        return out.toString();
     }
 
     private static String decimalPart(long cents) {
-        return String.format(BR, ",%02d", Math.abs(cents) % 100);
+        int rest = (int) (Math.abs(cents) % 100);
+        return rest < 10 ? ",0" + rest : "," + rest;
     }
 
     public static String plain(long cents) {

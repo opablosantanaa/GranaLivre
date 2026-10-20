@@ -71,7 +71,7 @@ public class AnalyticsScreen extends Screen {
         segmented.setOnChange(index -> {
             period = index;
             chartSelected = -1;
-            render(view);
+            renderLater(view);
         });
 
         TrendChartView chart = view.findViewById(R.id.chart);
@@ -89,17 +89,17 @@ public class AnalyticsScreen extends Screen {
         com.google.android.material.chip.ChipGroup categoryChips = view.findViewById(R.id.category_filter);
         vm.history.observe(getViewLifecycleOwner(), v -> {
             chartSelected = -1;
-            render(view);
+            renderLater(view);
         });
         vm.categoryList.observe(getViewLifecycleOwner(), categories -> {
             CategoryFilters.populate(requireContext(), categoryChips, categories, categoryFilter, id -> {
                 categoryFilter = id;
                 chartSelected = -1;
-                render(view);
+                renderLater(view);
             });
-            render(view);
+            renderLater(view);
         });
-        vm.budgetList.observe(getViewLifecycleOwner(), v -> render(view));
+        vm.budgetList.observe(getViewLifecycleOwner(), v -> renderLater(view));
     }
 
     private void renderLegend(View view) {
@@ -136,6 +136,10 @@ public class AnalyticsScreen extends Screen {
     private static boolean isExpense(FinancialTransaction t, LocalDate from, LocalDate to) {
         LocalDate d = t.getTransaction_date();
         return t.getTransaction_type() == TransactionType.DESPESA && !d.isBefore(from) && !d.isAfter(to);
+    }
+
+    private void renderLater(View view) {
+        later("render", () -> render(view));
     }
 
     private void render(View view) {

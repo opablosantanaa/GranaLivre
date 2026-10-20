@@ -48,12 +48,12 @@ public class GoalsScreen extends Screen {
                 GoalSheet.create().show(getChildFragmentManager(), "goal"));
 
         MainViewModel vm = vm();
-        vm.goalList.observe(getViewLifecycleOwner(), v -> render(view));
-        vm.budgetList.observe(getViewLifecycleOwner(), v -> render(view));
-        vm.history.observe(getViewLifecycleOwner(), v -> render(view));
-        vm.categoryList.observe(getViewLifecycleOwner(), v -> render(view));
-        vm.cardList.observe(getViewLifecycleOwner(), v -> render(view));
-        vm.cardDebts.observe(getViewLifecycleOwner(), v -> render(view));
+        vm.goalList.observe(getViewLifecycleOwner(), v -> renderLater(view));
+        vm.budgetList.observe(getViewLifecycleOwner(), v -> renderLater(view));
+        vm.history.observe(getViewLifecycleOwner(), v -> renderLater(view));
+        vm.categoryList.observe(getViewLifecycleOwner(), v -> renderLater(view));
+        vm.cardList.observe(getViewLifecycleOwner(), v -> renderLater(view));
+        vm.cardDebts.observe(getViewLifecycleOwner(), v -> renderLater(view));
     }
 
     private View section(LinearLayout sheet, String title, String action, View.OnClickListener onAction) {
@@ -97,6 +97,10 @@ public class GoalsScreen extends Screen {
 
     private static String percent(float ratio) {
         return String.format(Locale.ROOT, "%d%%", Math.round(ratio * 100));
+    }
+
+    private void renderLater(View view) {
+        later("render", () -> render(view));
     }
 
     private void render(View view) {
