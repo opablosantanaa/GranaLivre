@@ -45,7 +45,8 @@ import java.time.LocalDate;
                         onDelete = ForeignKey.SET_NULL)},
         indices = {@Index("user_id"), @Index("account_id"), @Index("card_id"), @Index("invoice_id"),
                 @Index("category_id"), @Index("installment_id"), @Index("recurrence_id"),
-                @Index("transaction_date")})
+                @Index("transaction_date"),
+                @Index(value = {"account_id", "transaction_import_id"}, unique = true)})
 @TypeConverters(Converters.class)
 public class FinancialTransaction {
     @PrimaryKey (autoGenerate = true)
@@ -101,6 +102,10 @@ public class FinancialTransaction {
     @ColumnInfo (name = "transaction_paid")
     private boolean transaction_paid = true;
 
+    @Nullable
+    @ColumnInfo (name = "transaction_import_id")
+    private String transaction_import_id;
+
     public long getTransaction_id() { return transaction_id; }
     public void setTransaction_id(long transaction_id) { this.transaction_id = transaction_id; }
 
@@ -152,4 +157,8 @@ public class FinancialTransaction {
 
     public boolean isTransaction_paid() { return transaction_paid; }
     public void setTransaction_paid(boolean transaction_paid) { this.transaction_paid = transaction_paid; }
+
+    @Nullable
+    public String getTransaction_import_id() { return transaction_import_id; }
+    public void setTransaction_import_id(@Nullable String transaction_import_id) { this.transaction_import_id = transaction_import_id; }
 }

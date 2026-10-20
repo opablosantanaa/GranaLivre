@@ -46,7 +46,7 @@ import java.util.concurrent.Executors;
         FinancialTransaction.class,
         Budget.class,
         Goal.class},
-        version = 1,
+        version = 2,
         exportSchema = true)
 @TypeConverters(Converters.class)
 public abstract class AppDatabase extends RoomDatabase {
@@ -76,6 +76,7 @@ public abstract class AppDatabase extends RoomDatabase {
                 if (INSTANCE == null) {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                                     AppDatabase.class, DATABASE_NAME)
+                            .addMigrations(Migrations.MIGRATION_1_2)
                             .build();
                 }
             }

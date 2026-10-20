@@ -18,11 +18,14 @@ import com.opablosantanaa.granalivre.relation.UserWithCards;
 
 import java.time.LocalDate;
 import java.util.Locale;
+import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.concurrent.Executor;
 
 public class UserRepository extends BaseRepository {
     private static final int MIN_PASSWORD_LENGTH = 8;
+    private static final String LOCAL_EMAIL_PREFIX = "local-";
+    private static final String LOCAL_EMAIL_DOMAIN = "@granalivre.local";
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
 
     private final UserDao userDao;
@@ -67,6 +70,27 @@ public class UserRepository extends BaseRepository {
                 return userId;
             });
         }, callback);
+    }
+
+    public void createLocalProfile(String name, LocalDate birthDate, RepositoryCallback<Long> callback) {
+        execute(() -> {
+            require(birthDate != null, "Informe a data de nascimento");
+            User user = new User();
+            user.setUser_name(name == null ? "" : name.trim());
+            user.setUser_email(LOCAL_EMAIL_PREFIX + UUID.randomUUID() + LOCAL_EMAIL_DOMAIN);
+            user.setUser_birth_date(birthDate);
+            validateProfile(user);
+            return database.runInTransaction(() -> {
+                long userId = userDao.insert(user);
+                categoryDao.insertAll(DefaultCategories.create(userId));
+                return userId;
+            });
+        }, callback);
+    }
+
+    public static boolean isLocalProfile(User user) {
+        return user != null && user.getUser_email().startsWith(LOCAL_EMAIL_PREFIX)
+                && user.getUser_email().endsWith(LOCAL_EMAIL_DOMAIN);
     }
 
     public void login(String email, String password, RepositoryCallback<User> callback) {

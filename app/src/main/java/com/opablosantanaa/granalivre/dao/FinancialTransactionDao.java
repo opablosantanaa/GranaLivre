@@ -42,6 +42,10 @@ public interface FinancialTransactionDao {
             + "ORDER BY transaction_date DESC, transaction_id DESC")
     LiveData<List<FinancialTransaction>> getByAccount(long accountId);
 
+    @Query("SELECT * FROM transactions WHERE recurrence_id = :recurrenceId AND transaction_paid = 0 "
+            + "ORDER BY transaction_date LIMIT 1")
+    FinancialTransaction findOldestPendingByRecurrence(long recurrenceId);
+
     @Query("SELECT * FROM transactions WHERE transaction_paid = 0 AND user_id = :userId "
             + "ORDER BY transaction_date")
     LiveData<List<FinancialTransaction>> getPending(long userId);
@@ -55,4 +59,13 @@ public interface FinancialTransactionDao {
             + "WHERE category_id = :categoryId AND transaction_type = 'DESPESA' "
             + "AND transaction_date BETWEEN :start AND :end")
     LiveData<Long> getExpenseByCategoryBetween(long categoryId, LocalDate start, LocalDate end);
+
+    @Query("SELECT transaction_import_id FROM transactions WHERE account_id = :accountId "
+            + "AND transaction_import_id IS NOT NULL")
+    List<String> findImportIds(long accountId);
+
+    @Query("SELECT COALESCE(SUM(CASE WHEN transaction_type = 'RECEITA' THEN transaction_amount_cents "
+            + "ELSE -transaction_amount_cents END), 0) FROM transactions "
+            + "WHERE account_id = :accountId AND transaction_paid = 1 AND transaction_date > :date")
+    long findNetAfter(long accountId, LocalDate date);
 }

@@ -1,9 +1,208 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
     <style name="Base.Theme.GranaLivre" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">@color/gl_primary</item>
+        <item name="colorOnPrimary">@color/gl_on_primary</item>
+        <item name="colorSecondary">@color/gl_secondary</item>
+        <item name="colorTertiary">@color/gl_accent</item>
+        <item name="colorError">@color/gl_expense</item>
+        <item name="android:colorBackground">@color/gl_bg</item>
+        <item name="colorSurface">@color/gl_surface</item>
+        <item name="colorOnSurface">@color/gl_text</item>
+        <item name="colorOnSurfaceVariant">@color/gl_text_secondary</item>
+        <item name="colorOutline">@color/gl_line</item>
+        <item name="android:windowBackground">@color/gl_silk_backdrop</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:fontFamily">@font/schibsted_regular</item>
+        <item name="fontFamily">@font/schibsted_regular</item>
+        <item name="bottomSheetDialogTheme">@style/ThemeOverlay.GranaLivre.BottomSheet</item>
+        <item name="textInputStyle">@style/Widget.GranaLivre.TextInput</item>
     </style>
 
     <style name="Theme.GranaLivre" parent="Base.Theme.GranaLivre" />
+
+    <style name="ThemeOverlay.GranaLivre.BottomSheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/Widget.GranaLivre.BottomSheet</item>
+        <item name="android:windowSoftInputMode">adjustResize</item>
+    </style>
+
+    <style name="Widget.GranaLivre.BottomSheet" parent="Widget.Material3.BottomSheet.Modal">
+        <item name="backgroundTint">@color/gl_bg</item>
+        <item name="shapeAppearance">@style/Shape.GranaLivre.Sheet</item>
+    </style>
+
+    <style name="Shape.GranaLivre.Sheet" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">24dp</item>
+        <item name="cornerSizeTopRight">24dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+
+    <style name="Widget.GranaLivre.TextInput" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxCornerRadiusTopStart">14dp</item>
+        <item name="boxCornerRadiusTopEnd">14dp</item>
+        <item name="boxCornerRadiusBottomStart">14dp</item>
+        <item name="boxCornerRadiusBottomEnd">14dp</item>
+        <item name="boxStrokeColor">@color/gl_primary</item>
+        <item name="hintTextColor">@color/gl_primary</item>
+    </style>
+
+    <!-- Escala tipográfica: 12 / 13 / 15 / 17 / 22 / 34 -->
+    <style name="Text" parent="">
+        <item name="android:fontFamily">@font/schibsted_regular</item>
+        <item name="android:textColor">@color/gl_text</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="Text.Display">
+        <item name="android:fontFamily">@font/schibsted_bold</item>
+        <item name="android:textSize">34sp</item>
+        <item name="android:letterSpacing">-0.02</item>
+        <item name="android:gravity">start</item>
+    </style>
+
+    <style name="Text.Title">
+        <item name="android:breakStrategy">balanced</item>
+        <item name="android:fontFamily">@font/schibsted_semibold</item>
+        <item name="android:textSize">22sp</item>
+        <item name="android:lineSpacingExtra">4sp</item>
+        <item name="android:letterSpacing">-0.01</item>
+        <item name="android:gravity">start</item>
+    </style>
+
+    <style name="Text.Headline">
+        <item name="android:fontFamily">@font/schibsted_semibold</item>
+        <item name="android:textSize">17sp</item>
+        <item name="android:gravity">start</item>
+    </style>
+
+    <style name="Text.Body">
+        <item name="android:breakStrategy">balanced</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:lineSpacingExtra">3sp</item>
+        <item name="android:gravity">start</item>
+    </style>
+
+    <style name="Text.Body.Strong">
+        <item name="android:fontFamily">@font/schibsted_semibold</item>
+    </style>
+
+    <style name="Text.Amount">
+        <item name="android:fontFamily">@font/schibsted_semibold</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:gravity">end</item>
+    </style>
+
+    <style name="Text.Caption">
+        <item name="android:textSize">13sp</item>
+        <item name="android:textColor">@color/gl_text_secondary</item>
+        <item name="android:gravity">start</item>
+    </style>
+
+    <style name="Text.Label">
+        <item name="android:fontFamily">@font/schibsted_medium</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">@color/gl_text_secondary</item>
+        <item name="android:gravity">start</item>
+    </style>
+
+    <style name="Text.Section">
+        <item name="android:fontFamily">@font/schibsted_medium</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:textColor">@color/gl_text_secondary</item>
+        <item name="android:gravity">start</item>
+    </style>
+
+    <style name="Button.GranaLivre" parent="Widget.Material3.Button">
+        <item name="android:fontFamily">@font/schibsted_semibold</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:minHeight">52dp</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="cornerRadius">26dp</item>
+        <item name="backgroundTint">@color/gl_primary</item>
+        <item name="android:textColor">@color/gl_on_primary</item>
+    </style>
+
+    <style name="Button.GranaLivre.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="android:fontFamily">@font/schibsted_semibold</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textColor">@color/gl_primary</item>
+    </style>
+
+    <style name="Chip.GranaLivre" parent="Widget.Material3.Chip.Filter">
+        <item name="android:fontFamily">@font/schibsted_medium</item>
+        <item name="android:textSize">13sp</item>
+        <item name="chipCornerRadius">18dp</item>
+        <item name="chipBackgroundColor">@color/chip_bg</item>
+        <item name="android:textColor">@color/chip_text</item>
+        <item name="chipStrokeColor">@color/gl_line</item>
+        <item name="chipStrokeWidth">1dp</item>
+        <item name="checkedIconVisible">false</item>
+    </style>
+    <style name="HomeAction">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">76dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:gravity">center</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:foreground">?attr/selectableItemBackground</item>
+    </style>
+
+    <style name="HomeAction.Icon" parent="">
+        <item name="android:layout_width">24dp</item>
+        <item name="android:layout_height">24dp</item>
+        <item name="android:importantForAccessibility">no</item>
+    </style>
+
+    <style name="HomeAction.Label" parent="Text.Label">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">8dp</item>
+        <item name="android:fontFamily">@font/schibsted_semibold</item>
+        <item name="android:textSize">13sp</item>
+    </style>
+    <style name="MovesStat" parent="">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:orientation">vertical</item>
+    </style>
+
+    <style name="MovesStat.Label" parent="Text.Label">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/gl_on_silk_secondary</item>
+    </style>
+
+    <style name="MovesStat.Value" parent="Text.Amount">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">22dp</item>
+        <item name="android:layout_marginEnd">8dp</item>
+        <item name="android:layout_marginTop">6dp</item>
+        <item name="android:textColor">@color/gl_on_silk</item>
+        <item name="android:gravity">start</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:autoSizeTextType">uniform</item>
+        <item name="android:autoSizeMinTextSize">12sp</item>
+        <item name="android:autoSizeMaxTextSize">16sp</item>
+    </style>
+    <style name="SheetLabel" parent="Text.Section">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">20dp</item>
+        <item name="android:layout_marginBottom">8dp</item>
+    </style>
+
+    <style name="SheetField" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">12dp</item>
+    </style>
 </resources>

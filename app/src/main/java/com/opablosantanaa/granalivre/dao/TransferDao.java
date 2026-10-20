@@ -32,4 +32,10 @@ public interface TransferDao {
             + "OR transfer_to_account_id = :accountId "
             + "ORDER BY transfer_date DESC, transfer_id DESC")
     LiveData<List<Transfer>> getByAccount(long accountId);
+
+    @Query("SELECT COALESCE(SUM(CASE WHEN transfer_to_account_id = :accountId THEN transfer_amount_cents "
+            + "ELSE -transfer_amount_cents END), 0) FROM transfers "
+            + "WHERE (transfer_to_account_id = :accountId OR transfer_from_account_id = :accountId) "
+            + "AND transfer_date > :date")
+    long findNetAfter(long accountId, LocalDate date);
 }
