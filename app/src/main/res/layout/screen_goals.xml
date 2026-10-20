@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:id="@+id/header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp">
+
+            <TextView
+                style="@style/Text.Title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/goals_title"
+                android:textColor="@color/gl_on_silk" />
+
+            <TextView
+                style="@style/Text.Label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="@string/goals_saved"
+                android:textColor="@color/gl_on_silk_secondary" />
+
+            <TextView
+                android:id="@+id/saved"
+                style="@style/Text.Display"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:textColor="@color/gl_on_silk" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/new_goal"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:layout_marginTop="16dp"
+                android:fontFamily="@font/schibsted_semibold"
+                android:letterSpacing="0"
+                android:text="@string/goals_new"
+                android:textAllCaps="false"
+                android:textColor="@color/gl_on_silk"
+                app:cornerRadius="24dp"
+                app:icon="@drawable/ic_plus"
+                app:iconSize="18dp"
+                app:iconTint="@color/gl_on_silk"
+                app:strokeColor="@color/gl_on_silk_line" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/sheet"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginTop="24dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_sheet"
+            android:minHeight="360dp"
+            android:orientation="vertical"
+            android:paddingStart="20dp"
+            android:paddingTop="12dp"
+            android:paddingEnd="20dp" />
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

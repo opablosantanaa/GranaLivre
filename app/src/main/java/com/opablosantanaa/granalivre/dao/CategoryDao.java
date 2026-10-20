@@ -32,6 +32,9 @@ public interface CategoryDao {
     @Query("SELECT * FROM categories WHERE user_id = :userId ORDER BY category_name")
     LiveData<List<Category>> getByUser(long userId);
 
+    @Query("SELECT * FROM categories WHERE user_id = :userId ORDER BY category_name")
+    List<Category> findByUser(long userId);
+
     @Query("SELECT * FROM categories WHERE user_id = :userId AND category_type = :type "
             + "AND category_parent_id IS NULL ORDER BY category_name")
     LiveData<List<Category>> getRootsByType(long userId, TransactionType type);

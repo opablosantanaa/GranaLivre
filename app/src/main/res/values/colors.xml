@@ -2,4 +2,39 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <color name="gl_primary">#0B6E69</color>
+    <color name="gl_secondary">#2EC4B6</color>
+    <color name="gl_accent">#FFB547</color>
+    <color name="gl_income">#22A06B</color>
+    <color name="gl_expense">#E5484D</color>
+    <color name="gl_bg">#F7F9FA</color>
+    <color name="gl_surface">#FFFFFF</color>
+    <color name="gl_text">#1A2B2E</color>
+    <color name="gl_text_secondary">#5B6B6E</color>
+    <color name="gl_field_text">#1A2B2E</color>
+    <color name="gl_field_hint">#5B6B6E</color>
+
+    <color name="gl_line">#1F1A2B2E</color>
+    <color name="gl_primary_tint">#1A0B6E69</color>
+    <color name="gl_accent_tint">#2EFFB547</color>
+    <color name="gl_expense_tint">#1FE5484D</color>
+    <color name="gl_income_tint">#1F22A06B</color>
+    <color name="gl_on_primary">#FFFFFF</color>
+
+    <color name="gl_ink">#172124</color>
+    <color name="gl_on_ink">#E6EEF0</color>
+    <color name="gl_on_ink_secondary">#9AABAE</color>
+    <color name="gl_ink_line">#2E3D41</color>
+
+    <color name="gl_silk">#0B6E69</color>
+    <color name="gl_silk_backdrop">#063B38</color>
+    <color name="gl_silk_light">#CFEFEA</color>
+    <color name="gl_on_silk">#F7F9FA</color>
+    <color name="gl_on_silk_secondary">#BFF7F9FA</color>
+    <color name="gl_on_silk_line">#59F7F9FA</color>
+    <color name="gl_on_silk_fill">#1FF7F9FA</color>
+    <color name="gl_on_light_silk">#1A2B2E</color>
+    <color name="gl_on_light_silk_secondary">#5B6B6E</color>
+    <color name="gl_on_light_silk_line">#401A2B2E</color>
 </resources>

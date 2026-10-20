@@ -1,7 +1,22 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
     <style name="Base.Theme.GranaLivre" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+        <item name="colorPrimary">@color/gl_primary</item>
+        <item name="colorOnPrimary">@color/gl_on_primary</item>
+        <item name="colorSecondary">@color/gl_secondary</item>
+        <item name="colorTertiary">@color/gl_accent</item>
+        <item name="colorError">@color/gl_expense</item>
+        <item name="android:colorBackground">@color/gl_bg</item>
+        <item name="colorSurface">@color/gl_surface</item>
+        <item name="colorOnSurface">@color/gl_text</item>
+        <item name="colorOnSurfaceVariant">@color/gl_text_secondary</item>
+        <item name="colorOutline">@color/gl_line</item>
+        <item name="android:windowBackground">@color/gl_silk_backdrop</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:fontFamily">@font/schibsted_regular</item>
+        <item name="fontFamily">@font/schibsted_regular</item>
+        <item name="bottomSheetDialogTheme">@style/ThemeOverlay.GranaLivre.BottomSheet</item>
+        <item name="textInputStyle">@style/Widget.GranaLivre.TextInput</item>
     </style>
 </resources>

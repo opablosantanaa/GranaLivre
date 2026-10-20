@@ -5,6 +5,7 @@ import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.Query;
+import java.time.LocalDate;
 import androidx.room.Transaction;
 import androidx.room.Update;
 
@@ -47,4 +48,8 @@ public interface InvoiceDao {
             + "THEN transaction_amount_cents ELSE -transaction_amount_cents END), 0) "
             + "FROM transactions WHERE invoice_id = :invoiceId")
     long findTotal(long invoiceId);
+
+    @Query("SELECT COALESCE(SUM(invoice_paid_cents), 0) FROM invoices WHERE invoice_payment_account_id = :accountId "
+            + "AND invoice_status = 'PAGA' AND invoice_paid_date > :date")
+    long findPaidAfter(long accountId, LocalDate date);
 }
