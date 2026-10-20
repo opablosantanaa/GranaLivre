@@ -21,6 +21,8 @@
     <color name="gl_ink_line">#2E3D41</color>
 
     <color name="gl_silk">#0A5551</color>
+    <color name="gl_prism_veil">#73040C0D</color>
+    <color name="gl_prism_veil_top">#99040C0D</color>
     <color name="gl_silk_backdrop">#071C1D</color>
     <color name="gl_silk_light">#0B6E69</color>
     <color name="gl_on_light_silk">#E6EEF0</color>

@@ -6,6 +6,7 @@ import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
 import android.provider.Settings;
 import android.util.AttributeSet;
+import android.view.Choreographer;
 
 import com.opablosantanaa.granalivre.R;
 
@@ -17,6 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -64,22 +66,26 @@ public class PrismView extends GLSurfaceView {
         }
     }
 
-    private static final long FRAME_MS = 33;
+    private static final long FRAME_INTERVAL_NANOS = 1_000_000_000L / 30;
+    private static final long SLOW_INTERVAL_NANOS = 1_000_000_000L / 15;
+    private static final long VSYNC_SLACK_NANOS = 2_000_000L;
+    private static final float[] RESOLUTION_STEPS = {0.4f, 0.32f, 0.25f};
 
     private final boolean reduceMotion;
-    private final float resolution;
     private volatile Style style = new Style();
+    private final AtomicBoolean frameInFlight = new AtomicBoolean(false);
+    private final FrameGovernor governor = new FrameGovernor();
+    private final Choreographer.FrameCallback frameCallback = this::onVsync;
+
     private boolean resumed;
     private boolean paused;
-    private final Runnable tick = new Runnable() {
-        @Override
-        public void run() {
-            if (!resumed || paused || reduceMotion) return;
-            requestRender();
-            postDelayed(this, FRAME_MS);
-        }
-    };
-
+    private boolean shown = true;
+    private boolean callbackPosted;
+    private long lastRequestNanos;
+    private int resolutionStep;
+    private int quality = DeviceLoad.NORMAL;
+    private DeviceLoad deviceLoad;
+    private volatile float surfaceScale = RESOLUTION_STEPS[0];
     public PrismView(Context context) {
         this(context, null);
     }
@@ -89,7 +95,6 @@ public class PrismView extends GLSurfaceView {
         float animatorScale = Settings.Global.getFloat(context.getContentResolver(),
                 Settings.Global.ANIMATOR_DURATION_SCALE, 1f);
         reduceMotion = animatorScale == 0f;
-        resolution = 0.4f;
         setEGLContextClientVersion(3);
         setEGLConfigChooser(8, 8, 8, 8, 0, 0);
         setPreserveEGLContextOnPause(true);
@@ -108,32 +113,107 @@ public class PrismView extends GLSurfaceView {
     public void setPaused(boolean value) {
         if (paused == value) return;
         paused = value;
-        restartTicks();
+        updateLoop();
     }
 
-    private void restartTicks() {
-        removeCallbacks(tick);
-        if (resumed && !paused && !reduceMotion) post(tick);
+    private boolean shouldAnimate() {
+        return resumed && shown && !paused && !reduceMotion && quality != DeviceLoad.STOPPED;
+    }
+
+    private void updateLoop() {
+        if (shouldAnimate()) {
+            if (!callbackPosted) {
+                callbackPosted = true;
+                lastRequestNanos = 0;
+                Choreographer.getInstance().postFrameCallback(frameCallback);
+            }
+        } else if (callbackPosted) {
+            callbackPosted = false;
+            Choreographer.getInstance().removeFrameCallback(frameCallback);
+        }
+    }
+
+    private void onVsync(long frameTimeNanos) {
+        callbackPosted = false;
+        if (!shouldAnimate()) return;
+        long interval = quality == DeviceLoad.REDUCED ? SLOW_INTERVAL_NANOS : FRAME_INTERVAL_NANOS;
+        if (frameTimeNanos - lastRequestNanos >= interval - VSYNC_SLACK_NANOS) {
+            if (frameInFlight.compareAndSet(false, true)) {
+                lastRequestNanos = frameTimeNanos;
+                governor.onRequested();
+                requestRender();
+            } else {
+                governor.onMissed();
+            }
+            applyGovernor();
+        }
+        callbackPosted = true;
+        Choreographer.getInstance().postFrameCallback(frameCallback);
+    }
+
+    private void applyGovernor() {
+        int next = governor.decide(resolutionStep, RESOLUTION_STEPS.length - 1);
+        if (next == resolutionStep) return;
+        resolutionStep = next;
+        applyResolution(getWidth(), getHeight());
+    }
+
+    private void applyResolution(int w, int h) {
+        if (w <= 0 || h <= 0) return;
+        float scale = RESOLUTION_STEPS[resolutionStep];
+        surfaceScale = scale;
+        getHolder().setFixedSize(Math.max(1, Math.round(w * scale)), Math.max(1, Math.round(h * scale)));
+    }
+
+    private void onDeviceLoad(int level) {
+        quality = level;
+        updateLoop();
+        requestRender();
     }
 
     @Override
     public void onResume() {
         super.onResume();
         resumed = true;
-        restartTicks();
+        frameInFlight.set(false);
+        updateLoop();
     }
 
     @Override
     public void onPause() {
         resumed = false;
-        removeCallbacks(tick);
+        updateLoop();
         super.onPause();
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        deviceLoad = new DeviceLoad(getContext(), this::onDeviceLoad);
+        quality = deviceLoad.start();
+        updateLoop();
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        if (deviceLoad != null) deviceLoad.stop();
+        deviceLoad = null;
+        resumed = false;
+        updateLoop();
+        super.onDetachedFromWindow();
+    }
+
+    @Override
+    protected void onWindowVisibilityChanged(int visibility) {
+        super.onWindowVisibilityChanged(visibility);
+        shown = visibility == VISIBLE;
+        updateLoop();
     }
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        getHolder().setFixedSize(Math.max(1, Math.round(w * resolution)), Math.max(1, Math.round(h * resolution)));
+        applyResolution(w, h);
     }
 
     private static String readRaw(Context context, int id) {
@@ -294,6 +374,14 @@ public class PrismView extends GLSurfaceView {
 
         @Override
         public void onDrawFrame(GL10 unused) {
+            try {
+                drawFrame();
+            } finally {
+                frameInFlight.set(false);
+            }
+        }
+
+        private void drawFrame() {
             Style s = style;
             long now = System.nanoTime();
             float dt = last != 0 ? Math.max(0.001f, Math.min(0.05f, (now - last) / 1e9f)) : 1f / 60f;
@@ -322,7 +410,7 @@ public class PrismView extends GLSurfaceView {
             float hs = (float) Math.sin(hue);
             float[] hueMatrix = new float[9];
             for (int i = 0; i < 9; i++) hueMatrix[i] = HUE_W[i] + HUE_U[i] * hc + HUE_V[i] * hs;
-            float pxPerDp = getResources().getDisplayMetrics().density * resolution;
+            float pxPerDp = getResources().getDisplayMetrics().density * surfaceScale;
 
             GLES30.glEnable(GLES30.GL_BLEND);
             GLES30.glBlendFunc(GLES30.GL_ONE, GLES30.GL_ONE_MINUS_SRC_ALPHA);

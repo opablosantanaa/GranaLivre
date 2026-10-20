@@ -69,27 +69,26 @@ public class StatementImportTest extends DatabaseTest {
     }
 
     @Test
-    public void reconciliationCreatesAdjustmentOnlyOnce() {
+    public void reconciliationKeepsCurrentBalanceAndCreatesAdjustmentOnlyOnce() {
         long accountId = createAccount(userId, 50_000);
         StatementImportRepository.Preview preview = success(cb -> repository.preview(userId, accountId, statement, cb));
-        assertEquals(Long.valueOf(50_000), preview.balanceAtLedgerCents);
-        long projected = preview.balanceAtLedgerCents + preview.selectedNet(statement.ledgerBalanceDate);
-        assertEquals(50_000, statement.ledgerBalanceCents - projected);
+        assertEquals(50_000, preview.balanceNowCents);
+        assertEquals(-15_000 + 350_000, preview.selectedNet(null));
 
         StatementImportRepository.Result result = success(cb -> repository.commit(userId, accountId, preview.rows,
                 statement.ledgerBalanceCents, statement.ledgerBalanceDate, true, cb));
         assertEquals(2, result.imported);
-        assertEquals(50_000, result.adjustmentCents);
-        assertEquals(435_000, database.accountDao().findBalance(accountId));
+        assertEquals(-(350_000 - 15_000), result.adjustmentCents);
+        assertEquals(50_000, database.accountDao().findBalance(accountId));
 
         StatementImportRepository.Preview again = success(cb -> repository.preview(userId, accountId, statement, cb));
-        DatabaseTest.<StatementImportRepository.Result>failure(cb -> repository.commit(userId, accountId, again.rows, statement.ledgerBalanceCents,
-                statement.ledgerBalanceDate, true, cb));
-        assertEquals(435_000, database.accountDao().findBalance(accountId));
+        DatabaseTest.<StatementImportRepository.Result>failure(cb -> repository.commit(userId, accountId, again.rows,
+                statement.ledgerBalanceCents, statement.ledgerBalanceDate, true, cb));
+        assertEquals(50_000, database.accountDao().findBalance(accountId));
     }
 
     @Test
-    public void reconciliationIgnoresMovementsAfterTheStatementDate() {
+    public void reconciliationOffsetsOnlySelectedRows() {
         long accountId = createAccount(userId, 100_000);
         FinancialTransaction later = new FinancialTransaction();
         later.setUser_id(userId);
@@ -101,10 +100,12 @@ public class StatementImportTest extends DatabaseTest {
         database.financialTransactionDao().insert(later);
 
         StatementImportRepository.Preview preview = success(cb -> repository.preview(userId, accountId, statement, cb));
+        preview.rows.get(1).selected = false;
         StatementImportRepository.Result result = success(cb -> repository.commit(userId, accountId, preview.rows,
                 statement.ledgerBalanceCents, statement.ledgerBalanceDate, true, cb));
-        assertEquals(0, result.adjustmentCents);
-        assertEquals(435_000 - 10_000, database.accountDao().findBalance(accountId));
+        assertEquals(1, result.imported);
+        assertEquals(15_000, result.adjustmentCents);
+        assertEquals(100_000 - 10_000, database.accountDao().findBalance(accountId));
     }
 
     @Test

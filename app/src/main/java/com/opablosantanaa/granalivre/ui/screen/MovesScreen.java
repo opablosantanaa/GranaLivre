@@ -58,7 +58,7 @@ public class MovesScreen extends Screen {
                 color(R.color.gl_text), color(R.color.gl_bg));
         segmented.setOnChange(index -> {
             filter = index;
-            render(view);
+            renderLater(view);
         });
 
         MainViewModel vm = vm();
@@ -72,18 +72,18 @@ public class MovesScreen extends Screen {
         view.findViewById(R.id.next).setOnClickListener(v -> vm.shiftMonth(1));
         vm.getSelectedMonth().observe(getViewLifecycleOwner(), month ->
                 ((TextView) view.findViewById(R.id.month)).setText(Dates.monthYear(month)));
-        vm.monthTransactions.observe(getViewLifecycleOwner(), v -> render(view));
-        vm.monthTransfers.observe(getViewLifecycleOwner(), v -> render(view));
+        vm.monthTransactions.observe(getViewLifecycleOwner(), v -> renderLater(view));
+        vm.monthTransfers.observe(getViewLifecycleOwner(), v -> renderLater(view));
         ChipGroup categoryChips = view.findViewById(R.id.category_filter);
         vm.categoryList.observe(getViewLifecycleOwner(), categories -> {
             CategoryFilters.populate(requireContext(), categoryChips, categories, categoryFilter, id -> {
                 categoryFilter = id;
-                render(view);
+                renderLater(view);
             });
-            render(view);
+            renderLater(view);
         });
-        vm.accountList.observe(getViewLifecycleOwner(), v -> render(view));
-        vm.cardList.observe(getViewLifecycleOwner(), v -> render(view));
+        vm.accountList.observe(getViewLifecycleOwner(), v -> renderLater(view));
+        vm.cardList.observe(getViewLifecycleOwner(), v -> renderLater(view));
     }
 
     private static final class Entry {
@@ -102,6 +102,10 @@ public class MovesScreen extends Screen {
             transaction = null;
             transfer = t;
         }
+    }
+
+    private void renderLater(View view) {
+        later("render", () -> render(view));
     }
 
     private void render(View view) {
@@ -234,7 +238,7 @@ public class MovesScreen extends Screen {
                 Rows.bindTransaction(holder.itemView, item.transaction, lookup);
                 holder.itemView.setOnClickListener(v -> TransactionSheet.edit(item.transaction)
                         .show(getChildFragmentManager(), "transaction"));
-            } else {
+            } else if (item.type == RowItem.TRANSFER) {
                 Rows.bindTransfer(holder.itemView, item.transfer, lookup);
                 holder.itemView.setOnClickListener(null);
             }

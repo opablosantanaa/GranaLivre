@@ -91,12 +91,12 @@ public class RecurringScreen extends Screen {
         });
 
         MainViewModel vm = vm();
-        vm.recurrenceList.observe(getViewLifecycleOwner(), v -> render(view));
-        vm.categoryList.observe(getViewLifecycleOwner(), v -> render(view));
-        vm.accountList.observe(getViewLifecycleOwner(), v -> render(view));
-        vm.cardList.observe(getViewLifecycleOwner(), v -> render(view));
-        vm.pendingList.observe(getViewLifecycleOwner(), v -> render(view));
-        vm.history.observe(getViewLifecycleOwner(), v -> render(view));
+        vm.recurrenceList.observe(getViewLifecycleOwner(), v -> renderLater(view));
+        vm.categoryList.observe(getViewLifecycleOwner(), v -> renderLater(view));
+        vm.accountList.observe(getViewLifecycleOwner(), v -> renderLater(view));
+        vm.cardList.observe(getViewLifecycleOwner(), v -> renderLater(view));
+        vm.pendingList.observe(getViewLifecycleOwner(), v -> renderLater(view));
+        vm.history.observe(getViewLifecycleOwner(), v -> renderLater(view));
     }
 
     private String rule(Recurrence r) {
@@ -239,6 +239,10 @@ public class RecurringScreen extends Screen {
                     });
                 })
                 .show();
+    }
+
+    private void renderLater(View view) {
+        later("render", () -> render(view));
     }
 
     private void render(View view) {

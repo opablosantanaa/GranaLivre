@@ -1,14 +1,15 @@
 package com.opablosantanaa.granalivre.ui.widget;
 
 import android.content.Context;
-import android.graphics.BlurMaskFilter;
+import android.graphics.Bitmap;
+import android.graphics.BitmapShader;
+import android.graphics.Shader;
 import android.graphics.Canvas;
 import android.graphics.DashPathEffect;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.Typeface;
-import android.os.Build;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
@@ -44,6 +45,12 @@ public class TrendChartView extends View {
     private final Paint pill = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint grid = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF rect = new RectF();
+    private Path firstPath;
+    private Path secondPath;
+    private Path areaPath;
+    private long cachedMax = 1;
+    private boolean cacheDirty = true;
+    private int dotShaderColor;
     private final Typeface regular;
     private final Typeface semibold;
     private final float d;
@@ -64,7 +71,6 @@ public class TrendChartView extends View {
         float sp = getResources().getDisplayMetrics().scaledDensity;
         regular = ResourcesCompat.getFont(context, R.font.schibsted_regular);
         semibold = ResourcesCompat.getFont(context, R.font.schibsted_semibold);
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) setLayerType(LAYER_TYPE_SOFTWARE, null);
         line.setStyle(Paint.Style.STROKE);
         line.setStrokeWidth(2.4f * d);
         line.setStrokeCap(Paint.Cap.ROUND);
@@ -73,7 +79,6 @@ public class TrendChartView extends View {
         glow.setStrokeWidth(7f * d);
         glow.setStrokeCap(Paint.Cap.ROUND);
         glow.setStrokeJoin(Paint.Join.ROUND);
-        glow.setMaskFilter(new BlurMaskFilter(7f * d, BlurMaskFilter.Blur.NORMAL));
         dash.setStyle(Paint.Style.STROKE);
         dash.setStrokeWidth(1.5f * d);
         dash.setPathEffect(new DashPathEffect(new float[]{3 * d, 3 * d}, 0));
@@ -111,6 +116,7 @@ public class TrendChartView extends View {
         this.tips = tips;
         this.showLabel = showLabel;
         this.selected = selected;
+        cacheDirty = true;
         invalidate();
     }
 
@@ -166,21 +172,60 @@ public class TrendChartView extends View {
         return path;
     }
 
-    private void drawSeries(Canvas canvas, long[] values, long max, int color) {
-        Path path = curve(values, max, false);
-        glow.setColor((color & 0x00FFFFFF) | 0x66000000);
+    private void drawSeries(Canvas canvas, Path path, int color) {
+        glow.setStrokeWidth(9f * d);
+        glow.setColor((color & 0x00FFFFFF) | 0x1F000000);
+        canvas.drawPath(path, glow);
+        glow.setStrokeWidth(5.5f * d);
+        glow.setColor((color & 0x00FFFFFF) | 0x38000000);
         canvas.drawPath(path, glow);
         line.setColor(color);
         canvas.drawPath(path, line);
+    }
+
+    private void rebuildPaths() {
+        cacheDirty = false;
+        int n = labels.length;
+        long raw = 0;
+        for (int i = 0; i < n; i++) raw = Math.max(raw, Math.max(first[i], second[i]));
+        cachedMax = niceMax(raw);
+        if (n < 2 || getWidth() == 0) {
+            firstPath = null;
+            secondPath = null;
+            areaPath = null;
+            return;
+        }
+        firstPath = curve(first, cachedMax, false);
+        secondPath = curve(second, cachedMax, false);
+        areaPath = curve(first, cachedMax, true);
+        areaPath.op(curve(second, cachedMax, true), Path.Op.UNION);
+    }
+
+    private void ensureDotShader() {
+        int color = dots.getColor();
+        if (dots.getShader() != null && dotShaderColor == color) return;
+        int step = Math.max(2, Math.round(9 * d));
+        Bitmap tile = Bitmap.createBitmap(step, step, Bitmap.Config.ARGB_8888);
+        Canvas tileCanvas = new Canvas(tile);
+        Paint dot = new Paint(Paint.ANTI_ALIAS_FLAG);
+        dot.setColor(color);
+        tileCanvas.drawCircle(step / 2f, step / 2f, 0.9f * d, dot);
+        dots.setShader(new BitmapShader(tile, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT));
+        dotShaderColor = color;
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        cacheDirty = true;
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         int n = labels.length;
         if (n == 0) return;
-        long raw = 0;
-        for (int i = 0; i < n; i++) raw = Math.max(raw, Math.max(first[i], second[i]));
-        long max = niceMax(raw);
+        if (cacheDirty) rebuildPaths();
+        long max = cachedMax;
 
         text.setTextAlign(Paint.Align.LEFT);
         text.setTypeface(regular);
@@ -193,20 +238,11 @@ public class TrendChartView extends View {
             canvas.drawText(axis.format(tick), right() + 8 * d, y - (fm.ascent + fm.descent) / 2f, text);
         }
 
-        if (n > 1) {
-            Path area = curve(first, max, true);
-            area.op(curve(second, max, true), Path.Op.UNION);
-            canvas.save();
-            canvas.clipPath(area);
-            float step = 9 * d;
-            for (float x = left(); x <= right(); x += step) {
-                for (float y = baseline(); y >= top() - step; y -= step) {
-                    canvas.drawCircle(x, y, 0.9f * d, dots);
-                }
-            }
-            canvas.restore();
-            drawSeries(canvas, second, max, secondColor);
-            drawSeries(canvas, first, max, firstColor);
+        if (areaPath != null) {
+            ensureDotShader();
+            canvas.drawPath(areaPath, dots);
+            drawSeries(canvas, secondPath, secondColor);
+            drawSeries(canvas, firstPath, firstColor);
         }
 
         text.setTextAlign(Paint.Align.CENTER);

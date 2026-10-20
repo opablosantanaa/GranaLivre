@@ -2,6 +2,9 @@ package com.opablosantanaa.granalivre.ui.screen;
 
 import android.view.View;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
@@ -45,6 +48,38 @@ public abstract class Screen extends Fragment {
         return Math.round(value * getResources().getDisplayMetrics().density);
     }
 
+    private final Map<String, Runnable> pendingRefreshes = new LinkedHashMap<>();
+    private boolean refreshPosted;
+
+    protected void later(String key, Runnable task) {
+        pendingRefreshes.put(key, task);
+        flushLater();
+    }
+
+    private void flushLater() {
+        View view = getView();
+        if (refreshPosted || view == null || isHidden() || pendingRefreshes.isEmpty()) return;
+        refreshPosted = true;
+        view.postOnAnimation(() -> {
+            refreshPosted = false;
+            if (!isAdded() || getView() == null) {
+                pendingRefreshes.clear();
+                return;
+            }
+            if (isHidden()) return;
+            Map<String, Runnable> snapshot = new LinkedHashMap<>(pendingRefreshes);
+            pendingRefreshes.clear();
+            for (Runnable t : snapshot.values()) t.run();
+        });
+    }
+
+    @Override
+    public void onDestroyView() {
+        pendingRefreshes.clear();
+        refreshPosted = false;
+        super.onDestroyView();
+    }
+
     protected void padTop(View view, int extraDp) {
         view.post(() -> {
             if (!isAdded()) return;
@@ -64,6 +99,14 @@ public abstract class Screen extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        app().onScreen(this);
+        if (!isHidden()) app().onScreen(this);
+    }
+
+    @Override
+    public void onHiddenChanged(boolean hidden) {
+        super.onHiddenChanged(hidden);
+        if (hidden) return;
+        if (isResumed()) app().onScreen(this);
+        flushLater();
     }
 }

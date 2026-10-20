@@ -63,55 +63,45 @@
             android:paddingEnd="20dp"
             android:paddingBottom="24dp">
 
+            <TextView
+                style="@style/SetupField.Label"
+                android:labelFor="@id/name"
+                android:text="@string/field_name" />
+
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/name_layout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                android:background="@drawable/bg_field_soft"
-                android:hint="@string/field_name"
-                android:minHeight="56dp"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                app:hintTextColor="@color/gl_field_hint"
-                app:boxBackgroundMode="none">
+                style="@style/SetupField"
+                android:layout_marginBottom="18dp">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/name"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="@null"
-                    android:imeOptions="actionNext"
+                    style="@style/SetupField.Input"
+                    android:hint="@string/setup_name_placeholder"
+                    android:imeOptions="actionDone"
                     android:inputType="textPersonName|textCapWords"
-                    android:textColor="@color/gl_field_text"
-                    android:textColorHint="@color/gl_field_hint" />
+                    android:maxLength="60" />
             </com.google.android.material.textfield.TextInputLayout>
+
+            <TextView
+                style="@style/SetupField.Label"
+                android:labelFor="@id/birth"
+                android:text="@string/field_birth" />
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/birth_layout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                android:background="@drawable/bg_field_soft"
-                android:hint="@string/field_birth"
-                android:minHeight="56dp"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                app:hintTextColor="@color/gl_field_hint"
-                app:boxBackgroundMode="none"
+                style="@style/SetupField"
+                android:layout_marginBottom="20dp"
+                app:endIconContentDescription="@string/setup_birth_pick"
                 app:endIconDrawable="@drawable/ic_calendar"
-                app:endIconTint="@color/gl_field_text"
                 app:endIconMode="custom">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/birth"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="@null"
+                    style="@style/SetupField.Input"
+                    android:cursorVisible="false"
+                    android:hint="@string/setup_birth_placeholder"
                     android:focusable="false"
-                    android:inputType="none"
-                    android:textColor="@color/gl_field_text"
-                    android:textColorHint="@color/gl_field_hint" />
+                    android:inputType="none" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <TextView

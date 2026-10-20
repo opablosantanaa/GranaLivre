@@ -12,8 +12,6 @@
     <color name="gl_surface">#FFFFFF</color>
     <color name="gl_text">#1A2B2E</color>
     <color name="gl_text_secondary">#5B6B6E</color>
-    <color name="gl_field_text">#1A2B2E</color>
-    <color name="gl_field_hint">#5B6B6E</color>
 
     <color name="gl_line">#1F1A2B2E</color>
     <color name="gl_primary_tint">#1A0B6E69</color>
@@ -28,6 +26,8 @@
     <color name="gl_ink_line">#2E3D41</color>
 
     <color name="gl_silk">#0B6E69</color>
+    <color name="gl_prism_veil">#59061514</color>
+    <color name="gl_prism_veil_top">#80061514</color>
     <color name="gl_silk_backdrop">#063B38</color>
     <color name="gl_silk_light">#CFEFEA</color>
     <color name="gl_on_silk">#F7F9FA</color>
