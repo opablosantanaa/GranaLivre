@@ -67,7 +67,11 @@
     <string name="analytics_title">Análises</string>
     <string name="analytics_result">Resultado do período</string>
     <string name="analytics_category_result">Gastos da categoria</string>
-    <string name="analytics_category_result_caption">%1$s · %2$s</string>
+    <string name="analytics_category_income_result">Receitas da categoria</string>
+    <string name="analytics_type_expense">Despesas</string>
+    <string name="analytics_type_income">Receitas</string>
+    <string name="analytics_type_choice">Analisar categorias de</string>
+    <string name="analytics_category_result_caption">%1$s: %2$s no período</string>
     <string name="analytics_budget_category">Orçamento · %1$s</string>
     <string name="analytics_result_caption">(%1$s de receitas, %2$s de despesas)</string>
     <string name="analytics_legend_income">Receitas %1$s</string>
@@ -85,6 +89,7 @@
     <string name="analytics_budget_none">Sem orçamento definido</string>
     <string name="analytics_no_category">Sem categoria</string>
     <string name="analytics_by_category">Gastos por categoria</string>
+    <string name="analytics_by_income_category">Receitas por categoria</string>
     <string name="analytics_empty">Sem gastos neste período.</string>
     <string name="analytics_chart">Gastos por período</string>
     <string name="analytics_pick">Escolher período</string>
