@@ -42,12 +42,21 @@ public class ProfileSheet extends BaseSheet {
         }
     }
 
-    private void row(LinearLayout parent, String title, String caption, CharSequence value) {
+    private View row(LinearLayout parent, String title, String caption, CharSequence value) {
         View row = LayoutInflater.from(requireContext()).inflate(R.layout.item_simple_row, parent, false);
         ((TextView) row.findViewById(R.id.title)).setText(title);
         ((TextView) row.findViewById(R.id.caption)).setText(caption);
         ((TextView) row.findViewById(R.id.value)).setText(value);
         parent.addView(row);
+        return row;
+    }
+
+    /** Linha que abre a edição ao toque. */
+    private void editable(View row, String title, BaseSheet sheet, String tag) {
+        row.setBackgroundResource(R.drawable.bg_row_ripple);
+        row.setClickable(true);
+        row.setContentDescription(getString(R.string.profile_edit_item, title));
+        row.setOnClickListener(v -> open(sheet, tag));
     }
 
     private void none(LinearLayout parent, int text) {
@@ -90,16 +99,18 @@ public class ProfileSheet extends BaseSheet {
         List<AccountWithBalance> accountList = vm.accountList.getValue();
         if (accountList == null || accountList.isEmpty()) none(accounts, R.string.profile_no_accounts);
         else for (AccountWithBalance a : accountList) {
-            row(accounts, a.account.getAccount_bank_name(), getString(accountKind(a.account.getAccount_type())),
+            View row = row(accounts, a.account.getAccount_bank_name(), getString(accountKind(a.account.getAccount_type())),
                     Money.styled(a.balanceCents, secondary));
+            editable(row, a.account.getAccount_bank_name(), AccountSheet.edit(a.account.getAccount_id()), "account");
         }
 
         LinearLayout cards = view.findViewById(R.id.cards);
         List<Card> cardList = vm.cardList.getValue();
         if (cardList == null || cardList.isEmpty()) none(cards, R.string.profile_no_cards);
         else for (Card c : cardList) {
-            row(cards, c.getCard_nickname(), getString(R.string.invoice_line, c.getCard_closing_day(), c.getCard_due_day()),
-                    "\u2022\u2022\u2022\u2022 " + c.getCard_last_digits());
+            View row = row(cards, c.getCard_nickname(), getString(R.string.invoice_line, c.getCard_closing_day(),
+                    c.getCard_due_day()), "\u2022\u2022\u2022\u2022 " + c.getCard_last_digits());
+            editable(row, c.getCard_nickname(), CardSheet.edit(c.getCard_id()), "card");
         }
 
         vm.categoryList.observe(getViewLifecycleOwner(), list -> {

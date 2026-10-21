@@ -37,6 +37,8 @@
     <string name="home_add_account">Adicionar conta</string>
     <string name="home_see_all">Ver todos</string>
     <string name="budget_warning">%1$s já usou %2$d%% do orçamento de %3$s.</string>
+    <string name="budget_warning_over">%1$s passou do orçamento de %2$s.</string>
+    <string name="budget_over_short">Estourou</string>
 
     <string name="card_total">Saldo em contas</string>
     <string name="balance_total_caption">%1$d contas. Deslize para ver cada uma</string>
@@ -112,6 +114,23 @@
     <string name="invoices_section">Faturas</string>
     <string name="invoice_line">Fecha dia %1$d, vence dia %2$d</string>
     <string name="invoice_limit">Limite disponível: %1$s</string>
+    <string name="invoice_open_hint">%1$s. Toque para ver a fatura detalhada</string>
+    <string name="invoice_title">Fatura de %1$s</string>
+    <string name="invoice_month">%1$s de %2$d</string>
+    <string name="invoice_prev">Fatura anterior</string>
+    <string name="invoice_next">Próxima fatura</string>
+    <string name="invoice_status_open">Aberta</string>
+    <string name="invoice_status_closed">Fechada, aguardando pagamento</string>
+    <string name="invoice_status_paid">Paga em %1$s</string>
+    <string name="invoice_dates">Fecha em %1$s · Vence em %2$s</string>
+    <string name="invoice_purchases">Compras nesta fatura</string>
+    <string name="invoice_empty">Nenhuma compra nesta fatura.</string>
+    <string name="invoice_pay_from">Pagar com</string>
+    <string name="invoice_pay">Pagar %1$s</string>
+    <string name="invoice_paid_toast">Fatura paga</string>
+    <string name="invoice_reopen">Desfazer pagamento</string>
+    <string name="invoice_reopened">Pagamento desfeito</string>
+    <string name="invoice_none">Ainda não há faturas neste cartão. Elas aparecem quando você lança uma compra nele.</string>
 
     <string name="entry_expense_title">Nova despesa</string>
     <string name="entry_income_title">Nova receita</string>
@@ -127,6 +146,9 @@
     <string name="entry_from">Sai de</string>
     <string name="entry_to">Entra em</string>
     <string name="entry_date">Data</string>
+    <string name="entry_purchase_date">Data da compra</string>
+    <string name="entry_or_card">Ou no cartão de crédito</string>
+    <string name="entry_card_due">Pagar até %1$s, vencimento da fatura de %2$s.</string>
     <string name="entry_installments">Parcelas</string>
     <string name="entry_installments_preview">%1$dx de %2$s</string>
     <string name="entry_installments_preview_first">1ª de %1$s e %2$dx de %3$s</string>
@@ -165,6 +187,11 @@
     <string name="account_initial">Saldo atual</string>
     <string name="account_save">Salvar conta</string>
     <string name="account_saved">Conta salva</string>
+    <string name="account_edit_title">Editar conta</string>
+    <string name="profile_edit_item">%1$s. Toque para editar ou excluir</string>
+    <string name="account_delete">Excluir conta</string>
+    <string name="account_delete_confirm">A conta \"%1$s\" e todos os lançamentos, transferências e recorrências dela serão apagados. Não é possível desfazer.</string>
+    <string name="account_deleted">Conta excluída</string>
 
     <string name="card_title">Novo cartão</string>
     <string name="card_nickname">Apelido do cartão</string>
@@ -176,6 +203,10 @@
     <string name="card_payment_account">Pagar a fatura com</string>
     <string name="card_save">Salvar cartão</string>
     <string name="card_saved">Cartão salvo</string>
+    <string name="card_edit_title">Editar cartão</string>
+    <string name="card_delete">Excluir cartão</string>
+    <string name="card_delete_confirm">O cartão \"%1$s\", as faturas e as compras feitas nele serão apagados. Não é possível desfazer.</string>
+    <string name="card_deleted">Cartão excluído</string>
     <string name="error_day">Use um dia entre 1 e 31.</string>
     <string name="error_digits">Informe os 4 últimos dígitos.</string>
 
@@ -189,9 +220,17 @@
     <string name="goal_add">Quanto guardar agora</string>
     <string name="goal_add_save">Guardar valor</string>
     <string name="goal_added">Valor guardado</string>
+    <string name="goal_mode_save">Guardar</string>
+    <string name="goal_mode_withdraw">Retirar</string>
+    <string name="goal_withdraw">Quanto retirar</string>
+    <string name="goal_withdraw_save">Retirar valor</string>
+    <string name="goal_withdrawn">Valor devolvido para a conta</string>
+    <string name="goal_from_account">Tirar de qual conta</string>
+    <string name="goal_to_account">Devolver para qual conta</string>
+    <string name="goal_no_accounts">Cadastre uma conta para guardar dinheiro nas metas.</string>
     <string name="goal_delete">Excluir meta</string>
     <string name="goal_deleted">Meta excluída</string>
-    <string name="goal_delete_confirm">A meta \"%1$s\" e o valor registrado nela serão apagados.</string>
+    <string name="goal_delete_confirm">A meta \"%1$s\" será apagada. O dinheiro que você reservou de contas volta para elas.</string>
     <string name="goal_remaining">Faltam %1$s</string>
     <string name="goal_done">Meta alcançada</string>
 

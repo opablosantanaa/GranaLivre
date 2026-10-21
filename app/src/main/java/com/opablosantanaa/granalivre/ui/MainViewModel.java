@@ -27,6 +27,7 @@ import com.opablosantanaa.granalivre.repository.CategoryRepository;
 import com.opablosantanaa.granalivre.repository.FinancialTransactionRepository;
 import com.opablosantanaa.granalivre.repository.GoalRepository;
 import com.opablosantanaa.granalivre.repository.InstallmentRepository;
+import com.opablosantanaa.granalivre.repository.InvoiceRepository;
 import com.opablosantanaa.granalivre.repository.RecurrenceGenerator;
 import com.opablosantanaa.granalivre.repository.StatementImportRepository;
 import com.opablosantanaa.granalivre.repository.RecurrenceRepository;
@@ -47,6 +48,7 @@ public class MainViewModel extends AndroidViewModel {
     public final CategoryRepository categories;
     public final FinancialTransactionRepository transactions;
     public final InstallmentRepository installments;
+    public final InvoiceRepository invoices;
     public final RecurrenceRepository recurrences;
     public final TransferRepository transfers;
     public final BudgetRepository budgets;
@@ -81,6 +83,7 @@ public class MainViewModel extends AndroidViewModel {
         categories = new CategoryRepository(application);
         transactions = new FinancialTransactionRepository(application);
         installments = new InstallmentRepository(application);
+        invoices = new InvoiceRepository(application);
         recurrences = new RecurrenceRepository(application);
         transfers = new TransferRepository(application);
         budgets = new BudgetRepository(application);

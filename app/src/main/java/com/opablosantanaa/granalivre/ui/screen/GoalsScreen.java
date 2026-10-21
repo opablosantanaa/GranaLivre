@@ -23,6 +23,7 @@ import com.opablosantanaa.granalivre.ui.MainViewModel;
 import com.opablosantanaa.granalivre.ui.Money;
 import com.opablosantanaa.granalivre.ui.sheet.BudgetSheet;
 import com.opablosantanaa.granalivre.ui.sheet.GoalSheet;
+import com.opablosantanaa.granalivre.ui.sheet.InvoiceSheet;
 import com.opablosantanaa.granalivre.ui.widget.BarView;
 
 import java.time.YearMonth;
@@ -165,7 +166,8 @@ public class GoalsScreen extends Screen {
                 String note = spent <= limit
                         ? getString(R.string.goal_remaining, Money.whole(limit - spent))
                         : getString(R.string.analytics_budget_over, Money.whole(spent - limit));
-                View row = progress(sheet, name, percent(ratio), ratio, barColor,
+                View row = progress(sheet, name, ratio > 1f ? getString(R.string.budget_over_short) : percent(ratio),
+                        Math.min(ratio, 1f), barColor,
                         getString(R.string.goals_progress, Money.whole(spent), Money.whole(limit)),
                         note, spent <= limit ? secondary : color(R.color.gl_expense));
                 row.setOnClickListener(v ->
@@ -181,11 +183,13 @@ public class GoalsScreen extends Screen {
                 Long debtValue = debts == null ? null : debts.get(card.getCard_id());
                 long debt = debtValue == null ? 0 : debtValue;
                 long limit = Math.max(1, card.getCard_limit_cents());
-                progress(sheet, card.getCard_nickname(), Money.styled(-debt, secondary),
-                        (float) debt / limit, color(R.color.gl_primary),
+                View row = progress(sheet, card.getCard_nickname(), Money.styled(-debt, secondary),
+                        Math.min(1f, (float) debt / limit), color(R.color.gl_primary),
                         getString(R.string.invoice_line, card.getCard_closing_day(), card.getCard_due_day()),
-                        getString(R.string.invoice_limit, Money.whole(card.getCard_limit_cents() - debt)),
-                        secondary).setClickable(false);
+                        getString(R.string.invoice_limit, Money.whole(Math.max(0, card.getCard_limit_cents() - debt))),
+                        secondary);
+                row.setContentDescription(getString(R.string.invoice_open_hint, row.getContentDescription()));
+                row.setOnClickListener(v -> InvoiceSheet.show(card.getCard_id()).show(getChildFragmentManager(), "invoice"));
             }
         }
     }

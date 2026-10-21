@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="24dp">
+
+        <include layout="@layout/include_sheet_header" />
+
+        <!-- navegação entre faturas (meses de referência) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/prev"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="-12dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/invoice_prev"
+                android:src="@drawable/ic_chevron_left"
+                app:tint="@color/gl_text" />
+
+            <TextView
+                android:id="@+id/month"
+                style="@style/Text.Headline"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:accessibilityLiveRegion="polite"
+                android:gravity="center" />
+
+            <ImageButton
+                android:id="@+id/next"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginEnd="-12dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/invoice_next"
+                android:src="@drawable/ic_chevron_right"
+                app:tint="@color/gl_text" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/status"
+            style="@style/Text.Label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_period_chip"
+            android:paddingStart="12dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="4dp" />
+
+        <TextView
+            android:id="@+id/total"
+            style="@style/Text.Display"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:maxLines="1" />
+
+        <TextView
+            android:id="@+id/dates"
+            style="@style/Text.Caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp" />
+
+        <TextView
+            style="@style/SheetLabel"
+            android:text="@string/invoice_purchases" />
+
+        <LinearLayout
+            android:id="@+id/list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <TextView
+            android:id="@+id/empty"
+            style="@style/Text.Body"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:text="@string/invoice_empty"
+            android:textColor="@color/gl_text_secondary"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:id="@+id/pay_group"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                style="@style/SheetLabel"
+                android:text="@string/invoice_pay_from" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/accounts"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:chipSpacingVertical="4dp"
+                app:selectionRequired="true"
+                app:singleSelection="true" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/error"
+            style="@style/Text.Caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:textColor="@color/gl_expense"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/pay"
+            style="@style/Button.GranaLivre"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/reopen"
+            style="@style/Button.GranaLivre.Text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="8dp"
+            android:text="@string/invoice_reopen" />
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

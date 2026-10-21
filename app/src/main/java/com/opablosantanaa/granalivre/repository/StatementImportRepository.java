@@ -93,7 +93,8 @@ public class StatementImportRepository extends BaseRepository {
         if (date == null) return now;
         return now - database.financialTransactionDao().findNetAfter(accountId, date)
                 - database.transferDao().findNetAfter(accountId, date)
-                + database.invoiceDao().findPaidAfter(accountId, date);
+                + database.invoiceDao().findPaidAfter(accountId, date)
+                + database.goalDao().findReservedAfter(accountId, date);
     }
 
     private Map<String, Long> categoryIds(long userId, TransactionType type) {

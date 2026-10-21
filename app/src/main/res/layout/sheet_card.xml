@@ -134,5 +134,16 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
             android:text="@string/card_save" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/delete"
+            style="@style/Button.GranaLivre.Text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="8dp"
+            android:text="@string/card_delete"
+            android:textColor="@color/gl_expense"
+            android:visibility="gone" />
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

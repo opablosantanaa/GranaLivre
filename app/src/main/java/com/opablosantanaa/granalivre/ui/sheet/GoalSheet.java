@@ -11,6 +11,11 @@ import androidx.annotation.Nullable;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.opablosantanaa.granalivre.R;
+import com.opablosantanaa.granalivre.ui.widget.SegmentedControl;
+import com.opablosantanaa.granalivre.relation.AccountWithBalance;
+import com.google.android.material.textfield.TextInputLayout;
+import com.google.android.material.chip.ChipGroup;
+import com.google.android.material.chip.Chip;
 import com.opablosantanaa.granalivre.entity.Goal;
 import com.opablosantanaa.granalivre.repository.RepositoryCallback;
 import com.opablosantanaa.granalivre.ui.Dates;
@@ -104,17 +109,50 @@ public class GoalSheet extends BaseSheet {
         view.findViewById(R.id.edit_group).setVisibility(View.VISIBLE);
         ((TextView) view.findViewById(R.id.summary)).setText(getString(R.string.goals_progress,
                 Money.plain(goal.getGoal_saved_cents()), Money.plain(goal.getGoal_target_cents())));
-        save.setText(R.string.goal_add_save);
+        // Guardar tira o valor de uma conta; Retirar devolve para uma conta (permitido antes de chegar a 100%)
+        SegmentedControl mode = view.findViewById(R.id.mode);
+        mode.setOptions(getString(R.string.goal_mode_save), getString(R.string.goal_mode_withdraw));
+        mode.setPalette(color(R.color.gl_line), color(R.color.gl_text_secondary),
+                color(R.color.gl_text), color(R.color.gl_bg));
+        mode.select(0, false);
+        mode.setVisibility(goal.getGoal_saved_cents() > 0 ? View.VISIBLE : View.GONE);
+        ChipGroup accounts = view.findViewById(R.id.accounts);
+        List<AccountWithBalance> list = vm().accountList.getValue();
+        if (list != null) {
+            for (int i = 0; i < list.size(); i++) {
+                AccountWithBalance a = list.get(i);
+                Chip chip = chip(accounts, a.account.getAccount_bank_name() + " · " + Money.whole(a.balanceCents),
+                        a.account.getAccount_id());
+                if (i == 0) chip.setChecked(true);
+            }
+        }
+        Runnable bindMode = () -> {
+            boolean withdraw = mode.getSelected() == 1;
+            ((TextInputLayout) view.findViewById(R.id.add_layout)).setHint(
+                    withdraw ? R.string.goal_withdraw : R.string.goal_add);
+            ((TextView) view.findViewById(R.id.account_label)).setText(
+                    withdraw ? R.string.goal_to_account : R.string.goal_from_account);
+            save.setText(withdraw ? R.string.goal_withdraw_save : R.string.goal_add_save);
+            error.setVisibility(View.GONE);
+        };
+        mode.setOnChange(index -> bindMode.run());
+        bindMode.run();
+        if (accounts.getChildCount() == 0) {
+            fail(error, null, getString(R.string.goal_no_accounts));
+            save.setEnabled(false);
+        }
         save.setOnClickListener(v -> {
             error.setVisibility(View.GONE);
-            long add = Money.parse(text(view.findViewById(R.id.add)));
-            if (add <= 0) {
+            long value = Money.parse(text(view.findViewById(R.id.add)));
+            if (value <= 0) {
                 fail(error, null, getString(R.string.error_amount));
                 return;
             }
-            goal.setGoal_saved_cents(goal.getGoal_saved_cents() + add);
+            long account = checkedTag(accounts);
+            boolean withdraw = mode.getSelected() == 1;
             save.setEnabled(false);
-            vm().goals.update(goal, callback(error, save, R.string.goal_added));
+            vm().goals.move(goal.getGoal_id(), account, withdraw ? -value : value,
+                    callback(error, save, withdraw ? R.string.goal_withdrawn : R.string.goal_added));
         });
         View delete = view.findViewById(R.id.delete);
         delete.setVisibility(View.VISIBLE);

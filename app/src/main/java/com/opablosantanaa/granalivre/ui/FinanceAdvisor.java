@@ -105,9 +105,11 @@ public final class FinanceAdvisor {
                 long avg = value(average, entry.getKey());
                 long spent = entry.getValue();
                 if (avg <= 0 || spent < avg * SPIKE_RATIO || spent - avg < MIN_RELEVANT_CENTS) continue;
+                // sem porcentagens acima de 100%: a partir do dobro, fala em "vezes"
+                float ratio = (float) spent / avg;
+                String how = ratio >= 2f ? times(ratio) : percent(ratio - 1f) + " acima da sua média";
                 warnings.add(new Tip(Mood.WARN, "Os gastos com " + name(categories, entry.getKey()) + " já estão "
-                        + percent((float) (spent - avg) / avg) + " acima da sua média dos últimos 3 meses ("
-                        + Money.plain(avg) + "). Fique de olho até o fim do mês."));
+                        + how + " dos últimos 3 meses (" + Money.plain(avg) + "). Fique de olho até o fim do mês."));
             }
         }
 
@@ -214,6 +216,13 @@ public final class FinanceAdvisor {
             }
         }
         return "Outras despesas";
+    }
+
+    /** "mais que o dobro da sua média", "mais que o triplo..." ou "mais de 4 vezes a sua média". */
+    private static String times(float ratio) {
+        int n = (int) Math.floor(ratio);
+        return n == 2 ? "mais que o dobro da sua média" : n == 3 ? "mais que o triplo da sua média"
+                : "mais de " + n + " vezes a sua média";
     }
 
     private static String percent(float ratio) {

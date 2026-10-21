@@ -25,6 +25,7 @@ import com.opablosantanaa.granalivre.entity.Card;
 import com.opablosantanaa.granalivre.entity.Category;
 import com.opablosantanaa.granalivre.entity.FinancialTransaction;
 import com.opablosantanaa.granalivre.entity.Goal;
+import com.opablosantanaa.granalivre.entity.GoalMovement;
 import com.opablosantanaa.granalivre.entity.Installment;
 import com.opablosantanaa.granalivre.entity.Invoice;
 import com.opablosantanaa.granalivre.entity.Recurrence;
@@ -45,8 +46,9 @@ import java.util.concurrent.Executors;
         Recurrence.class,
         FinancialTransaction.class,
         Budget.class,
-        Goal.class},
-        version = 2,
+        Goal.class,
+        GoalMovement.class},
+        version = 3,
         exportSchema = true)
 @TypeConverters(Converters.class)
 public abstract class AppDatabase extends RoomDatabase {
@@ -76,7 +78,7 @@ public abstract class AppDatabase extends RoomDatabase {
                 if (INSTANCE == null) {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                                     AppDatabase.class, DATABASE_NAME)
-                            .addMigrations(Migrations.MIGRATION_1_2)
+                            .addMigrations(Migrations.MIGRATION_1_2, Migrations.MIGRATION_2_3)
                             .build();
                 }
             }

@@ -87,7 +87,19 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:chipSpacingVertical="4dp"
-            app:selectionRequired="true"
+            app:singleSelection="true" />
+
+        <!-- cartões de crédito ficam numa linha própria, separados das contas -->
+        <TextView
+            android:id="@+id/card_label"
+            style="@style/SheetLabel"
+            android:text="@string/entry_or_card" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/cards"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:chipSpacingVertical="4dp"
             app:singleSelection="true" />
 
         <TextView
@@ -112,6 +124,7 @@
             android:orientation="horizontal">
 
             <TextView
+                android:id="@+id/date_label"
                 style="@style/Text.Body"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -133,6 +146,15 @@
                 app:iconTint="@color/gl_text_secondary"
                 app:strokeColor="@color/gl_line" />
         </LinearLayout>
+
+        <TextView
+            android:id="@+id/due_info"
+            style="@style/Text.Caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:accessibilityLiveRegion="polite"
+            android:visibility="gone" />
 
         <LinearLayout
             android:id="@+id/installments_row"
