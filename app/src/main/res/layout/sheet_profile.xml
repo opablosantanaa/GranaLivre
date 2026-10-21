@@ -102,7 +102,7 @@
             android:layout_width="match_parent"
             android:layout_height="52dp"
             android:layout_marginTop="24dp"
-            android:fontFamily="@font/schibsted_semibold"
+            android:fontFamily="@font/jakarta_semibold"
             android:letterSpacing="0"
             android:text="@string/profile_demo"
             android:textAllCaps="false"

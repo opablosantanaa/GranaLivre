@@ -69,8 +69,8 @@ public class TrendChartView extends View {
         super(context, attrs);
         d = getResources().getDisplayMetrics().density;
         float sp = getResources().getDisplayMetrics().scaledDensity;
-        regular = ResourcesCompat.getFont(context, R.font.schibsted_regular);
-        semibold = ResourcesCompat.getFont(context, R.font.schibsted_semibold);
+        regular = ResourcesCompat.getFont(context, R.font.jakarta_regular);
+        semibold = ResourcesCompat.getFont(context, R.font.jakarta_semibold);
         line.setStyle(Paint.Style.STROKE);
         line.setStrokeWidth(2.4f * d);
         line.setStrokeCap(Paint.Cap.ROUND);

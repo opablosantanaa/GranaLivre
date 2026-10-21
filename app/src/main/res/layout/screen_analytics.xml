@@ -214,7 +214,7 @@
                     style="@style/Text.Amount"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:fontFamily="@font/schibsted_bold"
+                    android:fontFamily="@font/jakarta_bold"
                     android:textSize="17sp" />
 
                 <TextView

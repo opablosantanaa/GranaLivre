@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Pedestal em pílula do mascote: degradê da paleta do app, do verde-água ao verde-seda -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <gradient
+        android:angle="270"
+        android:centerColor="#FF4FD1C5"
+        android:endColor="#FFCFEFEA"
+        android:startColor="#FF22A06B" />
+    <corners android:radius="999dp" />
+</shape>

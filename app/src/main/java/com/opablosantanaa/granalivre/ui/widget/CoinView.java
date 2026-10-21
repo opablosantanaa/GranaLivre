@@ -39,6 +39,7 @@ public class CoinView extends View {
     private FinanceAdvisor.Mood mood = FinanceAdvisor.Mood.INFO;
     private boolean blinking;
     private boolean alertDot;
+    private boolean curious;
     private float hop;
 
     private final Runnable blink = new Runnable() {
@@ -63,6 +64,13 @@ public class CoinView extends View {
         if (this.mood == mood && this.alertDot == alertDot) return;
         this.mood = mood;
         this.alertDot = alertDot;
+        invalidate();
+    }
+
+    /** Cara de curioso (sobrancelha levantada, boca em "o"), usada no cadastro; sobrepõe o humor da dica. */
+    public void setCurious(boolean curious) {
+        if (this.curious == curious) return;
+        this.curious = curious;
         invalidate();
     }
 
@@ -106,6 +114,29 @@ public class CoinView extends View {
         canvas.drawRect(left + col * size, top + row * size, left + (col + 1) * size, top + (row + 1) * size, paint);
     }
 
+    private void drawCurious(Canvas canvas, float left, float top, float size, int eye) {
+        int brow = color('o');
+        for (int col = 8; col <= 10; col++) pixel(canvas, left, top, size, col, 3, brow);
+        if (blinking) {
+            for (int col : new int[]{4, 5, 8, 9}) pixel(canvas, left, top, size, col, 6, eye);
+        } else {
+            for (int row = 4; row <= 5; row++) {
+                pixel(canvas, left, top, size, 4, row, eye);
+                pixel(canvas, left, top, size, 5, row, eye);
+            }
+            for (int row = 5; row <= 7; row++) {
+                pixel(canvas, left, top, size, 8, row, eye);
+                pixel(canvas, left, top, size, 9, row, eye);
+            }
+            pixel(canvas, left, top, size, 4, 4, color('h'));
+            pixel(canvas, left, top, size, 8, 5, color('h'));
+        }
+        for (int row = 9; row <= 10; row++) {
+            pixel(canvas, left, top, size, 6, row, eye);
+            pixel(canvas, left, top, size, 7, row, eye);
+        }
+    }
+
     @Override
     protected void onDraw(Canvas canvas) {
         float size = Math.min((getWidth() - getPaddingLeft() - getPaddingRight()) / (float) COLS,
@@ -122,6 +153,10 @@ public class CoinView extends View {
             }
         }
         int eye = color('e');
+        if (curious) {
+            drawCurious(canvas, left, top, size, eye);
+            return;
+        }
         if (blinking) {
             for (int col : new int[]{4, 5, 8, 9}) pixel(canvas, left, top, size, col, 6, eye);
         } else {

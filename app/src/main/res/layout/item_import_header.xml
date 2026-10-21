@@ -69,7 +69,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:fontFamily="@font/schibsted_regular"
+            android:fontFamily="@font/jakarta_regular"
             android:minHeight="48dp"
             android:textColor="@color/gl_text"
             android:textSize="14sp" />
