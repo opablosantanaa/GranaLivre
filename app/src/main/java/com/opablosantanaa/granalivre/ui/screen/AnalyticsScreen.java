@@ -14,6 +14,7 @@ import androidx.core.widget.TextViewCompat;
 
 import com.opablosantanaa.granalivre.App;
 import com.opablosantanaa.granalivre.R;
+import com.opablosantanaa.granalivre.domain.DefaultCategories;
 import com.opablosantanaa.granalivre.entity.Budget;
 import com.opablosantanaa.granalivre.entity.Category;
 import com.opablosantanaa.granalivre.entity.FinancialTransaction;
@@ -150,8 +151,7 @@ public class AnalyticsScreen extends Screen {
     }
 
     private static boolean matchesCategory(Long transactionCategory, long selectedCategory) {
-        return selectedCategory == -1L ? transactionCategory == null
-                : transactionCategory != null && transactionCategory == selectedCategory;
+        return transactionCategory != null && transactionCategory == selectedCategory;
     }
 
     private static boolean isExpense(FinancialTransaction t, LocalDate from, LocalDate to) {
@@ -174,6 +174,8 @@ public class AnalyticsScreen extends Screen {
         String[] labels;
         boolean[] show;
         LocalDate from;
+        LocalDate to = today;
+        int todayIndex;
         if (period == WEEK) {
             from = today.minusDays(6);
             values = new long[7];
@@ -191,9 +193,12 @@ public class AnalyticsScreen extends Screen {
                     add(t, index, values, incomes);
                 }
             }
+            todayIndex = 6;
         } else if (period == MONTH) {
             from = today.withDayOfMonth(1);
-            int days = today.getDayOfMonth();
+            to = YearMonth.from(today).atEndOfMonth();
+            int days = to.getDayOfMonth();
+            todayIndex = today.getDayOfMonth() - 1;
             values = new long[days];
             incomes = new long[days];
             labels = new String[days];
@@ -201,18 +206,20 @@ public class AnalyticsScreen extends Screen {
             String month = Dates.monthShort(YearMonth.from(today));
             for (int i = 0; i < days; i++) {
                 int day = i + 1;
-                boolean last = i == days - 1;
-                labels[i] = last ? getString(R.string.analytics_today) : day + " " + month;
-                show[i] = last || ((day == 1 || day % 5 == 0) && days - day >= 3);
+                boolean isToday = i == todayIndex;
+                labels[i] = isToday ? getString(R.string.analytics_today) : day + " " + month;
+                show[i] = isToday || ((day == 1 || day % 10 == 0) && Math.abs(i - todayIndex) >= 4);
             }
             for (FinancialTransaction t : history) {
-                if (inRange(t, from, today)) {
+                if (inRange(t, from, to)) {
                     add(t, t.getTransaction_date().getDayOfMonth() - 1, values, incomes);
                 }
             }
         } else {
             YearMonth first = YearMonth.from(today).minusMonths(11);
             from = first.atDay(1);
+            to = YearMonth.from(today).atEndOfMonth();
+            todayIndex = 11;
             values = new long[12];
             incomes = new long[12];
             labels = new String[12];
@@ -222,7 +229,7 @@ public class AnalyticsScreen extends Screen {
                 show[i] = i % 2 == 1;
             }
             for (FinancialTransaction t : history) {
-                if (inRange(t, from, today)) {
+                if (inRange(t, from, to)) {
                     int index = (int) (YearMonth.from(t.getTransaction_date()).getMonthValue()
                             - first.getMonthValue() + 12 * (t.getTransaction_date().getYear() - first.getYear()));
                     if (index >= 0 && index < 12) add(t, index, values, incomes);
@@ -231,7 +238,7 @@ public class AnalyticsScreen extends Screen {
         }
         chartIncome = incomes;
         chartExpense = values;
-        if (chartSelected < 0 || chartSelected >= values.length) chartSelected = values.length - 1;
+        if (chartSelected < 0 || chartSelected >= values.length) chartSelected = todayIndex;
         String[] tips = new String[labels.length];
         for (int i = 0; i < labels.length; i++) {
             if (period == YEAR) tips[i] = Dates.monthShort(YearMonth.from(today).minusMonths(11 - i))
@@ -263,7 +270,7 @@ public class AnalyticsScreen extends Screen {
         renderLegend(view);
 
         renderBudget(view, history, today);
-        renderCategories(view, history, from, today);
+        renderCategories(view, history, from, to);
     }
 
     private void renderBudget(View view, List<FinancialTransaction> history, LocalDate today) {
@@ -277,7 +284,7 @@ public class AnalyticsScreen extends Screen {
         long categoryFilter = categoryType == TransactionType.DESPESA ? this.categoryFilter : 0;
         if (budgets != null) {
             for (Budget b : budgets) {
-                if (categoryFilter != 0 && (categoryFilter < 0 || b.getCategory_id() != categoryFilter)) continue;
+                if (categoryFilter != 0 && b.getCategory_id() != categoryFilter) continue;
                 limits.put(b.getCategory_id(), b.getBudget_limit_cents());
                 limit += b.getBudget_limit_cents();
             }
@@ -336,7 +343,7 @@ public class AnalyticsScreen extends Screen {
             icon.setImageResource(CategoryStyle.icon(category, categoryType));
             icon.setImageTintList(ColorStateList.valueOf(tint));
             row.findViewById(R.id.icon_bg).setBackgroundTintList(ColorStateList.valueOf(CategoryStyle.tint(tint, 0x33)));
-            String name = category == null ? getString(R.string.analytics_no_category) : category.getCategory_name();
+            String name = category == null ? DefaultCategories.fallbackName(categoryType) : category.getCategory_name();
             ((TextView) row.findViewById(R.id.name)).setText(name);
             BarView bar = row.findViewById(R.id.bar);
             bar.setColors(0xFFE1EAE8, tint);
@@ -354,8 +361,7 @@ public class AnalyticsScreen extends Screen {
     }
 
     private String categoryName(List<Category> categories, long id) {
-        if (id == -1L) return getString(R.string.analytics_no_category);
         Category category = MainViewModel.find(categories, id);
-        return category == null ? getString(R.string.analytics_no_category) : category.getCategory_name();
+        return category == null ? DefaultCategories.fallbackName(categoryType) : category.getCategory_name();
     }
 }

@@ -10,6 +10,7 @@ import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -19,6 +20,9 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.widget.TextViewCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.PagerSnapHelper;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.button.MaterialButton;
 import com.opablosantanaa.granalivre.App;
@@ -34,7 +38,9 @@ import com.opablosantanaa.granalivre.entity.FinancialTransaction;
 import com.opablosantanaa.granalivre.entity.Recurrence;
 import com.opablosantanaa.granalivre.entity.TransactionType;
 import com.opablosantanaa.granalivre.entity.User;
+import com.opablosantanaa.granalivre.relation.AccountWithBalance;
 import com.opablosantanaa.granalivre.ui.Dates;
+import com.opablosantanaa.granalivre.ui.FinanceAdvisor;
 import com.opablosantanaa.granalivre.ui.MainViewModel;
 import com.opablosantanaa.granalivre.ui.Money;
 import com.opablosantanaa.granalivre.ui.RecurrenceMath;
@@ -46,6 +52,7 @@ import com.opablosantanaa.granalivre.ui.sheet.EntrySheet;
 import com.opablosantanaa.granalivre.ui.sheet.ImportSheet;
 import com.opablosantanaa.granalivre.ui.sheet.ProfileSheet;
 import com.opablosantanaa.granalivre.ui.sheet.TransactionSheet;
+import com.opablosantanaa.granalivre.ui.widget.CoinView;
 import com.opablosantanaa.granalivre.ui.widget.HeatmapView;
 import com.opablosantanaa.granalivre.ui.widget.PairBarsView;
 
@@ -55,6 +62,7 @@ import java.io.InputStream;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,6 +80,13 @@ public class HomeScreen extends Screen {
     private LocalDate[] bucketEnd = new LocalDate[0];
     private long[] bucketIncome = new long[0];
     private long[] bucketExpense = new long[0];
+
+    private static final int[] ACCOUNT_TYPE_LABELS = {R.string.account_corrente, R.string.account_poupanca,
+            R.string.account_investimento, R.string.account_carteira};
+    private final BalanceAdapter balanceAdapter = new BalanceAdapter();
+    private List<FinanceAdvisor.Tip> tips = new ArrayList<>();
+    private int tipIndex;
+    private int balancePage;
 
     private static final int MAX_STATEMENT_BYTES = 5 * 1024 * 1024;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
@@ -114,6 +129,22 @@ public class HomeScreen extends Screen {
         });
         buildLegend(view.findViewById(R.id.heatmap_swatches), income, expense);
 
+        RecyclerView pager = view.findViewById(R.id.balance_pager);
+        pager.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
+        pager.setAdapter(balanceAdapter);
+        new PagerSnapHelper().attachToRecyclerView(pager);
+        pager.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int state) {
+                if (state != RecyclerView.SCROLL_STATE_IDLE) return;
+                int page = ((LinearLayoutManager) recyclerView.getLayoutManager()).findFirstCompletelyVisibleItemPosition();
+                if (page >= 0 && page != balancePage) {
+                    balancePage = page;
+                    updateBalancePage(view);
+                }
+            }
+        });
+
         view.findViewById(R.id.period).setOnClickListener(v -> {
             period = period == WEEK ? MONTH : WEEK;
             selectedBar = -1;
@@ -122,8 +153,11 @@ public class HomeScreen extends Screen {
 
         MainViewModel vm = vm();
         vm.user.observe(getViewLifecycleOwner(), user -> bindUser(view, user));
-        vm.totalBalance.observe(getViewLifecycleOwner(), v -> later("refreshHero", () -> refreshHero(view)));
-        vm.accountList.observe(getViewLifecycleOwner(), v -> later("refreshList", () -> refreshList(view)));
+        vm.totalBalance.observe(getViewLifecycleOwner(), v -> later("refreshBalances", () -> refreshBalances(view)));
+        vm.accountList.observe(getViewLifecycleOwner(), v -> {
+            later("refreshList", () -> refreshList(view));
+            later("refreshBalances", () -> refreshBalances(view));
+        });
         vm.cardList.observe(getViewLifecycleOwner(), v -> later("refreshTiles", () -> refreshTiles(view)));
         vm.cardDebts.observe(getViewLifecycleOwner(), v -> later("refreshTiles", () -> refreshTiles(view)));
         vm.recurrenceList.observe(getViewLifecycleOwner(), v -> {
@@ -131,14 +165,41 @@ public class HomeScreen extends Screen {
             later("refreshWarning", () -> refreshWarning(view));
         });
         vm.pendingList.observe(getViewLifecycleOwner(), v -> later("refreshWarning", () -> refreshWarning(view)));
-        vm.categoryList.observe(getViewLifecycleOwner(), v -> later("refreshList", () -> refreshList(view)));
-        vm.budgetList.observe(getViewLifecycleOwner(), v -> later("refreshWarning", () -> refreshWarning(view)));
+        vm.categoryList.observe(getViewLifecycleOwner(), v -> {
+            later("refreshList", () -> refreshList(view));
+            later("refreshAdvisor", () -> refreshAdvisor(view));
+        });
+        vm.budgetList.observe(getViewLifecycleOwner(), v -> {
+            later("refreshWarning", () -> refreshWarning(view));
+            later("refreshAdvisor", () -> refreshAdvisor(view));
+        });
         vm.history.observe(getViewLifecycleOwner(), v -> {
             selectedBar = -1;
             later("refreshHero", () -> refreshHero(view));
             later("refreshTiles", () -> refreshTiles(view));
             later("refreshHeatmap", () -> refreshHeatmap(view));
             later("refreshList", () -> refreshList(view));
+            later("refreshAdvisor", () -> refreshAdvisor(view));
+        });
+
+        CoinView coin = view.findViewById(R.id.advisor);
+        coin.setOnClickListener(v -> {
+            coin.hop();
+            View bubble = view.findViewById(R.id.advisor_bubble);
+            if (bubble.getVisibility() == View.VISIBLE) {
+                tipIndex = (tipIndex + 1) % Math.max(1, tips.size());
+            } else {
+                tipIndex = 0;
+                bubble.setVisibility(View.VISIBLE);
+            }
+            showTip(view);
+        });
+        view.findViewById(R.id.advisor_close).setOnClickListener(v ->
+                view.findViewById(R.id.advisor_bubble).setVisibility(View.GONE));
+        view.findViewById(R.id.advisor_next).setOnClickListener(v -> {
+            tipIndex = (tipIndex + 1) % Math.max(1, tips.size());
+            coin.hop();
+            showTip(view);
         });
 
         view.findViewById(R.id.identity).setOnClickListener(v ->
@@ -152,7 +213,7 @@ public class HomeScreen extends Screen {
         view.findViewById(R.id.see_all).setOnClickListener(v -> app().showTab(App.TAB_MOVES));
         view.findViewById(R.id.tile_income).setOnClickListener(v -> app().showTab(App.TAB_MOVES));
         view.findViewById(R.id.tile_expense).setOnClickListener(v -> app().showTab(App.TAB_ANALYTICS));
-        view.findViewById(R.id.tile_fixed).setOnClickListener(v -> app().showTab(App.TAB_FIXED_EXPENSE));
+        view.findViewById(R.id.tile_fixed).setOnClickListener(v -> app().showRecurring(TransactionType.DESPESA));
         view.findViewById(R.id.tile_card).setOnClickListener(v -> {
             List<Card> cards = vm.cardList.getValue();
             if (cards == null || cards.isEmpty()) new CardSheet().show(getChildFragmentManager(), "card");
@@ -252,9 +313,6 @@ view.findViewById(R.id.identity).setContentDescription(full + ", " + Dates.today
 
     private void refreshHero(View view) {
         MainViewModel vm = vm();
-        Long total = vm.totalBalance.getValue();
-        ((TextView) view.findViewById(R.id.balance)).setText(Money.styled(total == null ? 0 : total, 0xFF3F5558));
-
         LocalDate today = LocalDate.now();
         String[] labels;
         if (period == WEEK) {
@@ -312,6 +370,120 @@ view.findViewById(R.id.identity).setContentDescription(full + ", " + Dates.today
         }
         ((PairBarsView) view.findViewById(R.id.bars)).setData(bucketIncome, bucketExpense, labels, selectedBar);
         updateBarCaption(view);
+    }
+
+    private void refreshAdvisor(View view) {
+        MainViewModel vm = vm();
+        tips = FinanceAdvisor.tips(vm.history.getValue(), vm.categoryList.getValue(), vm.budgetList.getValue(),
+                LocalDate.now());
+        if (tipIndex >= tips.size()) tipIndex = 0;
+        FinanceAdvisor.Mood top = tips.get(0).mood;
+        ((CoinView) view.findViewById(R.id.advisor)).setMood(top, top == FinanceAdvisor.Mood.ALERT);
+        if (view.findViewById(R.id.advisor_bubble).getVisibility() == View.VISIBLE) showTip(view);
+    }
+
+    private void showTip(View view) {
+        if (tips.isEmpty()) return;
+        FinanceAdvisor.Tip tip = tips.get(tipIndex);
+        ((CoinView) view.findViewById(R.id.advisor)).setMood(tip.mood, false);
+        ((TextView) view.findViewById(R.id.advisor_text)).setText(tip.text);
+        TextView title = view.findViewById(R.id.advisor_title);
+        title.setTextColor(color(tip.mood == FinanceAdvisor.Mood.ALERT ? R.color.gl_expense
+                : tip.mood == FinanceAdvisor.Mood.PRAISE ? R.color.gl_income : R.color.gl_primary));
+        MaterialButton next = view.findViewById(R.id.advisor_next);
+        next.setVisibility(tips.size() > 1 ? View.VISIBLE : View.GONE);
+        title.setText(tips.size() > 1 ? getString(R.string.advisor_title_count, tipIndex + 1, tips.size())
+                : getString(R.string.advisor_title));
+    }
+
+    private void refreshBalances(View view) {
+        MainViewModel vm = vm();
+        Long total = vm.totalBalance.getValue();
+        List<AccountWithBalance> accounts = vm.accountList.getValue();
+        List<BalancePage> pages = new ArrayList<>();
+        int count = accounts == null ? 0 : accounts.size();
+        pages.add(new BalancePage(getString(R.string.card_total), total == null ? 0 : total,
+                count == 0 ? "" : count == 1 ? accounts.get(0).account.getAccount_bank_name()
+                        : getString(R.string.balance_total_caption, count)));
+        if (accounts != null && accounts.size() > 1) {
+            for (AccountWithBalance a : accounts) {
+                pages.add(new BalancePage(a.account.getAccount_bank_name(), a.balanceCents,
+                        getString(ACCOUNT_TYPE_LABELS[a.account.getAccount_type().ordinal()])));
+            }
+        }
+        balanceAdapter.submit(pages);
+        if (balancePage >= pages.size()) {
+            balancePage = 0;
+            ((RecyclerView) view.findViewById(R.id.balance_pager)).scrollToPosition(0);
+        }
+        LinearLayout dots = view.findViewById(R.id.balance_dots);
+        dots.removeAllViews();
+        dots.setVisibility(pages.size() > 1 ? View.VISIBLE : View.GONE);
+        for (int i = 0; i < pages.size() && pages.size() > 1; i++) {
+            View dot = new View(requireContext());
+            GradientDrawable shape = new GradientDrawable();
+            shape.setShape(GradientDrawable.OVAL);
+            shape.setColor(0xFF1A2B2E);
+            dot.setBackground(shape);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(6), dp(6));
+            params.setMarginStart(i == 0 ? 0 : dp(5));
+            dots.addView(dot, params);
+        }
+        updateBalancePage(view);
+    }
+
+    private void updateBalancePage(View view) {
+        List<BalancePage> pages = balanceAdapter.pages;
+        if (pages.isEmpty()) return;
+        int page = Math.min(balancePage, pages.size() - 1);
+        ((TextView) view.findViewById(R.id.balance_title)).setText(pages.get(page).title);
+        LinearLayout dots = view.findViewById(R.id.balance_dots);
+        for (int i = 0; i < dots.getChildCount(); i++) dots.getChildAt(i).setAlpha(i == page ? 1f : 0.25f);
+    }
+
+    private static final class BalancePage {
+        final String title;
+        final long cents;
+        final String caption;
+
+        BalancePage(String title, long cents, String caption) {
+            this.title = title;
+            this.cents = cents;
+            this.caption = caption;
+        }
+    }
+
+    private final class BalanceAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+        final List<BalancePage> pages = new ArrayList<>();
+
+        void submit(List<BalancePage> next) {
+            pages.clear();
+            pages.addAll(next);
+            notifyDataSetChanged();
+        }
+
+        @NonNull
+        @Override
+        public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View item = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_balance_page, parent, false);
+            item.setLayoutParams(new RecyclerView.LayoutParams(parent.getWidth() > 0 ? parent.getWidth()
+                    : ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            return new RecyclerView.ViewHolder(item) {};
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+            BalancePage page = pages.get(position);
+            ((TextView) holder.itemView.findViewById(R.id.balance)).setText(Money.styled(page.cents, 0xFF3F5558));
+            ((TextView) holder.itemView.findViewById(R.id.balance_caption)).setText(page.caption);
+            holder.itemView.setContentDescription(getString(R.string.balance_page, page.title,
+                    Money.plain(page.cents), position + 1, pages.size()));
+        }
+
+        @Override
+        public int getItemCount() {
+            return pages.size();
+        }
     }
 
     private void updateBarCaption(View view) {
@@ -503,7 +675,7 @@ view.findViewById(R.id.identity).setContentDescription(full + ", " + Dates.today
                     late.get(0).getRecurrence_description(), Dates.dayMonth(since))
                     : getString(expense ? R.string.warning_overdue_expense : R.string.warning_overdue_income, late.size());
             ((TextView) view.findViewById(R.id.warning_text)).setText(text);
-            warning.setOnClickListener(v -> app().showTab(expense ? App.TAB_FIXED_EXPENSE : App.TAB_FIXED_INCOME));
+            warning.setOnClickListener(v -> app().showRecurring(type));
             warning.setVisibility(View.VISIBLE);
             return true;
         }

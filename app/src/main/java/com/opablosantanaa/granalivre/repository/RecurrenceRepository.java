@@ -61,28 +61,67 @@ public class RecurrenceRepository extends BaseRepository {
                     transactionDao.update(pending);
                     return;
                 }
-                Recurrence stored = recurrenceDao.findById(recurrence.getRecurrence_id());
-                require(stored != null, "Recorrência não encontrada");
-                LocalDate next = nextUnsettled(stored);
-                require(next != null, "Esta recorrência não tem próximas ocorrências");
-                FinancialTransaction transaction = new FinancialTransaction();
-                transaction.setUser_id(stored.getUser_id());
-                transaction.setAccount_id(stored.getAccount_id());
-                transaction.setCard_id(stored.getCard_id());
-                transaction.setCategory_id(stored.getCategory_id());
-                transaction.setRecurrence_id(stored.getRecurrence_id());
-                transaction.setTransaction_type(stored.getRecurrence_type());
-                transaction.setTransaction_amount_cents(stored.getRecurrence_amount_cents());
-                transaction.setTransaction_description(stored.getRecurrence_description());
+                FinancialTransaction transaction = openNextOccurrence(recurrence.getRecurrence_id());
                 transaction.setTransaction_date(settledOn);
                 transaction.setTransaction_paid(true);
                 rules.prepare(transaction);
                 transactionDao.insert(transaction);
-                stored.setRecurrence_last_generated_date(next);
-                recurrenceDao.update(stored);
             });
             return null;
         }, callback);
+    }
+
+    /**
+     * Registra um pagamento/recebimento parcial da ocorrência em aberto mais antiga. O valor informado vira
+     * um lançamento pago e é abatido da ocorrência, que continua pendente com o restante. Se o valor cobrir
+     * o restante, a ocorrência é quitada por inteiro.
+     */
+    public void settlePartial(Recurrence recurrence, long cents, LocalDate settledOn, RepositoryCallback<Boolean> callback) {
+        execute(() -> database.runInTransaction(() -> {
+            require(cents > 0, "O valor deve ser maior que zero");
+            FinancialTransactionDao transactionDao = database.financialTransactionDao();
+            FinancialTransaction pending = transactionDao.findOldestPendingByRecurrence(recurrence.getRecurrence_id());
+            if (pending == null) {
+                pending = openNextOccurrence(recurrence.getRecurrence_id());
+                rules.prepare(pending);
+                pending.setTransaction_id(transactionDao.insert(pending));
+            }
+            if (cents >= pending.getTransaction_amount_cents()) {
+                pending.setTransaction_paid(true);
+                pending.setTransaction_date(settledOn);
+                rules.prepare(pending);
+                transactionDao.update(pending);
+                return true;
+            }
+            FinancialTransaction part = new FinancialTransaction();
+            part.setUser_id(pending.getUser_id());
+            part.setAccount_id(pending.getAccount_id());
+            part.setCard_id(pending.getCard_id());
+            part.setCategory_id(pending.getCategory_id());
+            part.setRecurrence_id(pending.getRecurrence_id());
+            part.setTransaction_type(pending.getTransaction_type());
+            part.setTransaction_amount_cents(cents);
+            part.setTransaction_description(pending.getTransaction_description() + " (parcial)");
+            part.setTransaction_date(settledOn);
+            part.setTransaction_paid(true);
+            rules.prepare(part);
+            transactionDao.insert(part);
+            pending.setTransaction_amount_cents(pending.getTransaction_amount_cents() - cents);
+            rules.prepare(pending);
+            transactionDao.update(pending);
+            return false;
+        }), callback);
+    }
+
+    /** Cria (sem gravar) o lançamento pendente da próxima ocorrência ainda não gerada e avança a recorrência. */
+    private FinancialTransaction openNextOccurrence(long recurrenceId) {
+        Recurrence stored = recurrenceDao.findById(recurrenceId);
+        require(stored != null, "Recorrência não encontrada");
+        LocalDate next = nextUnsettled(stored);
+        require(next != null, "Esta recorrência não tem próximas ocorrências");
+        stored.setRecurrence_last_generated_date(next);
+        recurrenceDao.update(stored);
+        return RecurrenceGenerator.buildTransaction(stored, next);
     }
 
     public static LocalDate nextUnsettled(Recurrence recurrence) {
@@ -128,6 +167,7 @@ public class RecurrenceRepository extends BaseRepository {
                         || !recurrence.getRecurrence_end_date().isBefore(recurrence.getRecurrence_start_date()),
                 "A data de término deve ser igual ou posterior à data de início");
         rules.validateSource(recurrence.getUser_id(), recurrence.getAccount_id(), recurrence.getCard_id());
-        rules.validateCategory(recurrence.getUser_id(), recurrence.getCategory_id(), recurrence.getRecurrence_type());
+        recurrence.setCategory_id(rules.resolveCategory(recurrence.getUser_id(), recurrence.getCategory_id(),
+                recurrence.getRecurrence_type()));
     }
 }

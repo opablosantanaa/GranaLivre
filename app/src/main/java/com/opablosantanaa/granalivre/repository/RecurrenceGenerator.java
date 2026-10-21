@@ -65,7 +65,7 @@ public class RecurrenceGenerator {
         return created;
     }
 
-    private FinancialTransaction buildTransaction(Recurrence recurrence, LocalDate date) {
+    static FinancialTransaction buildTransaction(Recurrence recurrence, LocalDate date) {
         FinancialTransaction transaction = new FinancialTransaction();
         transaction.setUser_id(recurrence.getUser_id());
         transaction.setAccount_id(recurrence.getAccount_id());

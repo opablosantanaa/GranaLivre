@@ -2,7 +2,6 @@ package com.opablosantanaa.granalivre.repository;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.opablosantanaa.granalivre.domain.DefaultCategories;
@@ -109,11 +108,11 @@ public class StatementImportTest extends DatabaseTest {
     }
 
     @Test
-    public void unknownExpensesStayWithoutCategory() throws OfxException {
+    public void unknownExpensesFallBackToOtherExpenses() throws OfxException {
         String text = "<OFX><STMTTRN><DTPOSTED>20261001<TRNAMT>-10.00<FITID>Z<MEMO>PIX ENVIADO JOAO</STMTTRN></OFX>";
         long accountId = createAccount(userId, 0);
         OfxStatement other = OfxParser.parse(text.getBytes(StandardCharsets.UTF_8));
         StatementImportRepository.Preview preview = success(cb -> repository.preview(userId, accountId, other, cb));
-        assertNull(preview.rows.get(0).categoryId);
+        assertEquals(Long.valueOf(categoryId(DefaultCategories.OTHER_EXPENSES)), preview.rows.get(0).categoryId);
     }
 }

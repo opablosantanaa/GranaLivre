@@ -55,8 +55,8 @@ public class InstallmentRepository extends BaseRepository {
                     "Valor total insuficiente para o número de parcelas");
             long userId = installment.getUser_id();
             Card card = rules.validateSource(userId, accountId, cardId);
-            rules.validateCategory(userId, categoryId, TransactionType.DESPESA);
-            List<FinancialTransaction> parcels = buildParcels(installment, accountId, card, categoryId);
+            Long category = rules.resolveCategory(userId, categoryId, TransactionType.DESPESA);
+            List<FinancialTransaction> parcels = buildParcels(installment, accountId, card, category);
             return installmentDao.insertWithParcels(installment, parcels);
         }), callback);
     }

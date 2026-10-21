@@ -5,6 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -13,7 +14,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.chip.ChipGroup;
 import com.opablosantanaa.granalivre.App;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.opablosantanaa.granalivre.R;
+import com.opablosantanaa.granalivre.repository.RepositoryCallback;
 import com.opablosantanaa.granalivre.entity.FinancialTransaction;
 import com.opablosantanaa.granalivre.entity.TransactionType;
 import com.opablosantanaa.granalivre.entity.Transfer;
@@ -163,9 +166,33 @@ public class MovesScreen extends Screen {
         adapter.submit(items, lookup);
     }
 
+    private void confirmDeleteTransfer(Transfer transfer, Rows.Lookup lookup) {
+        String from = lookup.accounts.get(transfer.getTransfer_from_account_id());
+        String to = lookup.accounts.get(transfer.getTransfer_to_account_id());
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.transfer_delete)
+                .setMessage(getString(R.string.transfer_delete_confirm, Money.plain(transfer.getTransfer_amount_cents()),
+                        from == null ? "" : from, to == null ? "" : to))
+                .setNegativeButton(R.string.back, null)
+                .setPositiveButton(R.string.transfer_delete, (d, w) ->
+                        vm().transfers.delete(transfer, new RepositoryCallback<Void>() {
+                            @Override
+                            public void onSuccess(Void result) {
+                                if (isAdded()) Toast.makeText(requireContext(), R.string.transfer_deleted,
+                                        Toast.LENGTH_SHORT).show();
+                            }
+
+                            @Override
+                            public void onError(Exception e) {
+                                if (isAdded()) Toast.makeText(requireContext(), e.getMessage(),
+                                        Toast.LENGTH_LONG).show();
+                            }
+                        }))
+                .show();
+    }
+
     private static boolean matchesCategory(Long transactionCategory, long selectedCategory) {
-        return selectedCategory == -1L ? transactionCategory == null
-                : transactionCategory != null && transactionCategory == selectedCategory;
+        return transactionCategory != null && transactionCategory == selectedCategory;
     }
 
     private static final class RowItem {
@@ -240,7 +267,7 @@ public class MovesScreen extends Screen {
                         .show(getChildFragmentManager(), "transaction"));
             } else if (item.type == RowItem.TRANSFER) {
                 Rows.bindTransfer(holder.itemView, item.transfer, lookup);
-                holder.itemView.setOnClickListener(null);
+                holder.itemView.setOnClickListener(v -> confirmDeleteTransfer(item.transfer, lookup));
             }
         }
 

@@ -5,6 +5,7 @@ import static com.opablosantanaa.granalivre.repository.ValidationException.requi
 import android.content.Context;
 
 import com.opablosantanaa.granalivre.database.AppDatabase;
+import com.opablosantanaa.granalivre.domain.DefaultCategories;
 import com.opablosantanaa.granalivre.domain.ofx.CategorySuggester;
 import com.opablosantanaa.granalivre.domain.ofx.OfxStatement;
 import com.opablosantanaa.granalivre.domain.ofx.OfxTransaction;
@@ -114,7 +115,10 @@ public class StatementImportRepository extends BaseRepository {
             List<Row> rows = new ArrayList<>();
             for (OfxTransaction t : statement.transactions) {
                 String name = CategorySuggester.suggest(t.description, t.isIncome());
-                Long categoryId = name == null ? null : (t.isIncome() ? income : expense).get(name);
+                Map<String, Long> ids = t.isIncome() ? income : expense;
+                Long categoryId = name == null ? null : ids.get(name);
+                if (categoryId == null) categoryId = ids.get(DefaultCategories.fallbackName(
+                        t.isIncome() ? TransactionType.RECEITA : TransactionType.DESPESA));
                 rows.add(new Row(t, existing.contains(t.importId), categoryId));
             }
             Long atLedger = statement.ledgerBalanceCents == null ? null

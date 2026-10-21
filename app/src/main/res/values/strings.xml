@@ -3,8 +3,7 @@
 
     <string name="tab_home">Início</string>
     <string name="tab_moves">Movimentos</string>
-    <string name="tab_fixed_expense">Despesas recorrentes</string>
-    <string name="tab_fixed_income">Receitas recorrentes</string>
+    <string name="tab_recurring">Recorrentes</string>
     <string name="tab_analytics">Análises</string>
     <string name="tab_goals">Metas</string>
 
@@ -36,6 +35,8 @@
     <string name="budget_warning">%1$s já usou %2$d%% do orçamento de %3$s.</string>
 
     <string name="card_total">Saldo em contas</string>
+    <string name="balance_total_caption">%1$d contas. Deslize para ver cada uma</string>
+    <string name="balance_page">%1$s, %2$s. Página %3$d de %4$d</string>
     <string name="card_accounts">%1$d contas</string>
     <string name="card_one_account">1 conta</string>
     <string name="card_no_account">Nenhuma conta</string>
@@ -87,7 +88,6 @@
     <string name="analytics_budget_free">%1$s livres</string>
     <string name="analytics_budget_over">%1$s acima</string>
     <string name="analytics_budget_none">Sem orçamento definido</string>
-    <string name="analytics_no_category">Sem categoria</string>
     <string name="analytics_by_category">Gastos por categoria</string>
     <string name="analytics_by_income_category">Receitas por categoria</string>
     <string name="analytics_empty">Sem gastos neste período.</string>
@@ -207,6 +207,11 @@
     <string name="profile_add_category">Nova categoria</string>
     <string name="profile_categories_count">%1$d de despesa, %2$d de receita</string>
     <string name="profile_born">Nascimento: %1$s</string>
+    <string name="advisor_open">Assessor de finanças: toque para ver uma dica</string>
+    <string name="advisor_title">Dica do assessor</string>
+    <string name="advisor_close">Fechar dica</string>
+    <string name="advisor_title_count">Dica do assessor, %1$d de %2$d</string>
+    <string name="advisor_next">Próxima dica</string>
     <string name="home_add_card">Adicionar cartão de crédito</string>
     <string name="home_legend_income">Receitas</string>
     <string name="home_legend_expense">Despesas</string>
@@ -229,8 +234,8 @@
     <string name="heatmap_day_empty">%1$s: sem movimentação</string>
     <string name="heatmap_more_expense">Despesas</string>
     <string name="heatmap_more_income">Receitas</string>
-    <string name="recurring_expense_title">Despesas recorrentes</string>
-    <string name="recurring_income_title">Receitas recorrentes</string>
+    <string name="recurring_title">Recorrentes</string>
+    <string name="recurring_type_choice">Tipo de recorrência</string>
     <string name="recurring_monthly_total">Total equivalente por mês</string>
     <string name="recurring_summary">%1$d ativas, %2$d pausadas</string>
     <string name="recurring_new_expense">Nova despesa recorrente</string>
@@ -283,18 +288,34 @@
     <string name="settle_receive_title">Registrar recebimento</string>
     <string name="settle_message">%1$s de %2$s será lançado hoje, %3$s. A data prevista era %4$s.</string>
     <string name="settle_message_same">%1$s de %2$s será lançado hoje, %3$s.</string>
+    <string name="settle_full">Valor total (%1$s)</string>
+    <string name="settle_partial">Em parcela</string>
+    <string name="settle_partial_hint">O valor informado é abatido desta ocorrência, que continua em aberto com o restante.</string>
+    <string name="settle_partial_too_much">O valor não pode passar do que está em aberto (%1$s).</string>
+    <string name="settle_partial_toast">Parcela registrada. O restante segue em aberto.</string>
+    <string name="recurring_open_left">Restam %1$s</string>
     <string name="settle_paid_toast">Pagamento registrado</string>
     <string name="settle_received_toast">Recebimento registrado</string>
     <string name="warning_overdue_expense">%1$d despesas recorrentes atrasadas. Toque para registrar.</string>
     <string name="warning_overdue_expense_one">%1$s está atrasada desde %2$s. Toque para registrar.</string>
     <string name="warning_overdue_income">%1$d receitas recorrentes não recebidas. Toque para registrar.</string>
     <string name="warning_overdue_income_one">%1$s não foi recebida desde %2$s. Toque para registrar.</string>
-    <string name="transaction_edit_hint">Toque para editar a data</string>
+    <string name="transaction_edit_hint">Toque para editar ou excluir</string>
     <string name="transaction_save">Salvar alterações</string>
     <string name="transaction_saved">Lançamento atualizado</string>
     <string name="transaction_paid_expense">Já foi pago</string>
     <string name="transaction_paid_income">Já foi recebido</string>
-    <string name="transaction_recurring_hint">Lançamento de %1$s. Mudar a data altera só este lançamento, não a recorrência.</string>
+    <string name="transaction_recurring_hint">Lançamento de %1$s. As alterações valem só para este lançamento, não para a recorrência.</string>
+    <string name="transaction_edit_expense">Editar despesa</string>
+    <string name="transaction_edit_income">Editar receita</string>
+    <string name="transaction_paid_with">Paga com %1$s</string>
+    <string name="transaction_received_in">Recebida em %1$s</string>
+    <string name="transaction_delete">Excluir lançamento</string>
+    <string name="transaction_delete_confirm">O lançamento de %1$s será apagado e o saldo recalculado. Não é possível desfazer.</string>
+    <string name="transaction_deleted">Lançamento excluído</string>
+    <string name="transfer_delete">Excluir transferência</string>
+    <string name="transfer_delete_confirm">A transferência de %1$s de %2$s para %3$s será apagada e os saldos recalculados.</string>
+    <string name="transfer_deleted">Transferência excluída</string>
     <string name="transaction_not_found">Este lançamento não existe mais.</string>
     <string name="import_button">Importar extrato (OFX)</string>
     <string name="import_title">Revisar extrato</string>
@@ -309,7 +330,6 @@
     <string name="import_target">Importar para</string>
     <string name="import_counts">%1$d novos, %2$d já importados</string>
     <string name="import_duplicate">Já importado</string>
-    <string name="import_no_category">Sem categoria</string>
     <string name="import_choose_category">Escolher categoria de %1$s</string>
     <string name="import_reconcile_title">Conciliação de saldo</string>
     <string name="import_ledger">Saldo no extrato em %1$s: %2$s</string>

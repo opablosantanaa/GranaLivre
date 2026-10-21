@@ -61,6 +61,22 @@ public class CategoryRepository extends BaseRepository {
         }, callback);
     }
 
+    /** Move lançamentos e recorrências sem categoria para "Outras despesas" / "Outras receitas". */
+    public void adoptOrphans(long userId) {
+        execute(() -> {
+            database.runInTransaction(() -> {
+                for (TransactionType type : TransactionType.values()) {
+                    if (categoryDao.countOrphanTransactions(userId, type) == 0
+                            && categoryDao.countOrphanRecurrences(userId, type) == 0) continue;
+                    long fallback = TransactionRules.fallbackCategory(categoryDao, userId, type);
+                    categoryDao.adoptOrphanTransactions(userId, type, fallback);
+                    categoryDao.adoptOrphanRecurrences(userId, type, fallback);
+                }
+            });
+            return null;
+        }, null);
+    }
+
     private void validate(Category category) {
         category.setCategory_name(category.getCategory_name().trim());
         require(!isBlank(category.getCategory_name()), "Informe o nome da categoria");

@@ -48,6 +48,16 @@
                     android:textColor="@color/gl_on_silk_secondary" />
             </LinearLayout>
 
+            <com.opablosantanaa.granalivre.ui.widget.CoinView
+                android:id="@+id/advisor"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:layout_marginEnd="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/advisor_open"
+                android:focusable="true"
+                android:padding="4dp" />
+
             <ImageButton
                 android:id="@+id/add_card"
                 android:layout_width="48dp"
@@ -57,6 +67,65 @@
                 android:foreground="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_card"
                 app:tint="@color/gl_text" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/advisor_bubble"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginEnd="16dp"
+            android:background="@drawable/bg_surface"
+            android:orientation="vertical"
+            android:paddingStart="18dp"
+            android:paddingTop="14dp"
+            android:paddingEnd="8dp"
+            android:paddingBottom="4dp"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/advisor_title"
+                    style="@style/Text.Label"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="@font/schibsted_semibold"
+                    android:text="@string/advisor_title"
+                    android:textColor="@color/gl_primary" />
+
+                <ImageButton
+                    android:id="@+id/advisor_close"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/advisor_close"
+                    android:src="@drawable/ic_close"
+                    app:tint="@color/gl_text_secondary" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/advisor_text"
+                style="@style/Text.Body"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="10dp"
+                android:accessibilityLiveRegion="polite"
+                android:textColor="@color/gl_text" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/advisor_next"
+                style="@style/Button.GranaLivre.Text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:text="@string/advisor_next" />
         </LinearLayout>
 
         <LinearLayout
@@ -80,10 +149,13 @@
                 android:orientation="horizontal">
 
                 <TextView
+                    android:id="@+id/balance_title"
                     style="@style/Text.Headline"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:maxLines="1"
                     android:text="@string/card_total"
                     android:textColor="#1A2B2E" />
 
@@ -103,15 +175,21 @@
                     app:drawableTint="#1A2B2E" />
             </LinearLayout>
 
-            <TextView
-                android:id="@+id/balance"
-                style="@style/Text.Display"
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/balance_pager"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
-                android:maxLines="1"
-                android:textColor="#1A2B2E"
-                android:textSize="36sp" />
+                android:overScrollMode="never" />
+
+            <LinearLayout
+                android:id="@+id/balance_dots"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="6dp"
+                android:importantForAccessibility="no"
+                android:orientation="horizontal" />
 
             <TextView
                 android:id="@+id/delta"
