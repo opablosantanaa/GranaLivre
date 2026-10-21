@@ -15,6 +15,7 @@ import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.textfield.TextInputEditText;
 import com.opablosantanaa.granalivre.R;
+import com.opablosantanaa.granalivre.domain.InvoiceCalculator;
 import com.opablosantanaa.granalivre.domain.InstallmentSplitter;
 import com.opablosantanaa.granalivre.entity.Card;
 import com.opablosantanaa.granalivre.entity.Category;
@@ -31,6 +32,7 @@ import com.opablosantanaa.granalivre.ui.Money;
 import com.opablosantanaa.granalivre.ui.widget.SegmentedControl;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 
 public class EntrySheet extends BaseSheet {
@@ -76,6 +78,7 @@ public class EntrySheet extends BaseSheet {
         dateButton.setOnClickListener(v -> new DatePickerDialog(requireContext(), (picker, y, m, d) -> {
             date = LocalDate.of(y, m + 1, d);
             dateButton.setText(Dates.relativeDay(date));
+            updateDue(view);
         }, date.getYear(), date.getMonthValue() - 1, date.getDayOfMonth()).show());
         dateButton.setText(Dates.relativeDay(date));
 
@@ -93,7 +96,16 @@ public class EntrySheet extends BaseSheet {
             installments = Math.min(MAX_INSTALLMENTS, installments + 1);
             updateInstallments(view);
         });
-        ((ChipGroup) view.findViewById(R.id.sources)).setOnCheckedStateChangeListener((g, ids) -> {
+        // conta e cartão ficam em linhas separadas, mas só uma origem pode estar marcada
+        ChipGroup sourcesGroup = view.findViewById(R.id.sources);
+        ChipGroup cardsGroup = view.findViewById(R.id.cards);
+        sourcesGroup.setOnCheckedStateChangeListener((g, ids) -> {
+            if (!ids.isEmpty() && cardsGroup.getCheckedChipId() != View.NO_ID) cardsGroup.clearCheck();
+            if (!sourceIsCard(view)) installments = 1;
+            updateInstallments(view);
+        });
+        cardsGroup.setOnCheckedStateChangeListener((g, ids) -> {
+            if (!ids.isEmpty() && sourcesGroup.getCheckedChipId() != View.NO_ID) sourcesGroup.clearCheck();
             if (!sourceIsCard(view)) installments = 1;
             updateInstallments(view);
         });
@@ -110,7 +122,37 @@ public class EntrySheet extends BaseSheet {
     }
 
     private boolean sourceIsCard(View view) {
-        return checkedTag(view.findViewById(R.id.sources)) < 0;
+        return checkedTag(view.findViewById(R.id.cards)) > 0;
+    }
+
+    /** Origem escolhida: id da conta (positivo) ou id do cartão com sinal negativo; 0 se nenhuma. */
+    private long checkedSource(View view) {
+        long card = checkedTag(view.findViewById(R.id.cards));
+        return card > 0 ? -card : checkedTag(view.findViewById(R.id.sources));
+    }
+
+    private Card checkedCard(View view) {
+        long id = checkedTag(view.findViewById(R.id.cards));
+        List<Card> cards = vm().cardList.getValue();
+        if (id <= 0 || cards == null) return null;
+        for (Card card : cards) if (card.getCard_id() == id) return card;
+        return null;
+    }
+
+    /** Compra no cartão: a data de pagamento é sempre o vencimento da fatura em que a compra cai. */
+    private void updateDue(View view) {
+        Card card = type == TYPE_EXPENSE ? checkedCard(view) : null;
+        TextView due = view.findViewById(R.id.due_info);
+        ((TextView) view.findViewById(R.id.date_label)).setText(
+                card == null ? R.string.entry_date : R.string.entry_purchase_date);
+        if (card == null) {
+            due.setVisibility(View.GONE);
+            return;
+        }
+        YearMonth month = InvoiceCalculator.referenceMonth(date, card.getCard_closing_day());
+        LocalDate dueDate = InvoiceCalculator.dueDate(month, card.getCard_closing_day(), card.getCard_due_day());
+        due.setText(getString(R.string.entry_card_due, Dates.shortDate(dueDate), Dates.month(month)));
+        due.setVisibility(View.VISIBLE);
     }
 
     private TransactionType categoryType() {
@@ -172,10 +214,15 @@ public class EntrySheet extends BaseSheet {
                 if (transfer) chip(targets, a.account.getAccount_bank_name(), a.account.getAccount_id());
             }
         }
+        ChipGroup cardChips = view.findViewById(R.id.cards);
+        cardChips.removeAllViews();
         List<Card> cards = vm().cardList.getValue();
         if (cards != null && type == TYPE_EXPENSE) {
-            for (Card card : cards) chip(sources, card.getCard_nickname(), -card.getCard_id());
+            for (Card card : cards) chip(cardChips, card.getCard_nickname(), card.getCard_id());
         }
+        boolean showCards = cardChips.getChildCount() > 0;
+        cardChips.setVisibility(showCards ? View.VISIBLE : View.GONE);
+        view.findViewById(R.id.card_label).setVisibility(showCards ? View.VISIBLE : View.GONE);
         if (sources.getChildCount() > 0) ((Chip) sources.getChildAt(0)).setChecked(true);
         if (targets.getChildCount() > 1) ((Chip) targets.getChildAt(1)).setChecked(true);
         targets.setVisibility(transfer ? View.VISIBLE : View.GONE);
@@ -185,6 +232,7 @@ public class EntrySheet extends BaseSheet {
     }
 
     private void updateInstallments(View view) {
+        updateDue(view);
         boolean visible = type == TYPE_EXPENSE && sourceIsCard(view);
         view.findViewById(R.id.installments_row).setVisibility(visible ? View.VISIBLE : View.GONE);
         MaterialSwitch repeat = view.findViewById(R.id.repeat);
@@ -217,7 +265,7 @@ public class EntrySheet extends BaseSheet {
             fail(error, null, getString(R.string.error_amount));
             return;
         }
-        long source = checkedTag(view.findViewById(R.id.sources));
+        long source = checkedSource(view);
         if (source == 0) {
             fail(error, null, getString(vm().accountList.getValue() == null
                     || vm().accountList.getValue().isEmpty() ? R.string.error_need_account : R.string.error_source));

@@ -110,7 +110,7 @@ public class FinanceAdvisorTest {
         for (int i = 1; i <= 3; i++) add(TransactionType.DESPESA, 20_000, LEISURE, TODAY.minusMonths(i));
         add(TransactionType.DESPESA, 50_000, LEISURE, TODAY.withDayOfMonth(3));
         add(TransactionType.DESPESA, 200_000, FOOD, TODAY.withDayOfMonth(3));
-        assertTrue(has(tips(), FinanceAdvisor.Mood.WARN, "Lazer já estão 150% acima"));
+        assertTrue(has(tips(), FinanceAdvisor.Mood.WARN, "Lazer já estão mais que o dobro da sua média"));
     }
 
     @Test

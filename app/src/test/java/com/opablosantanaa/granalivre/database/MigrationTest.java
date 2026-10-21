@@ -89,7 +89,7 @@ public class MigrationTest {
         createVersion1(file);
 
         AppDatabase database = Room.databaseBuilder(context, AppDatabase.class, NAME)
-                .addMigrations(Migrations.MIGRATION_1_2)
+                .addMigrations(Migrations.MIGRATION_1_2, Migrations.MIGRATION_2_3)
                 .allowMainThreadQueries()
                 .build();
         assertEquals(750, database.accountDao().findBalance(1));

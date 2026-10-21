@@ -747,8 +747,10 @@ view.findViewById(R.id.identity).setContentDescription(full + ", " + Dates.today
         }
         Category category = MainViewModel.find(categories, worst.getCategory_id());
         String name = category == null ? "" : category.getCategory_name();
-        ((TextView) view.findViewById(R.id.warning_text)).setText(getString(R.string.budget_warning,
-                name, Math.round(worstRatio * 100), Dates.month(month)));
+        // acima de 100% o aviso fala que estourou, sem citar porcentagem
+        ((TextView) view.findViewById(R.id.warning_text)).setText(worstRatio > 1f
+                ? getString(R.string.budget_warning_over, name, Dates.month(month))
+                : getString(R.string.budget_warning, name, Math.round(worstRatio * 100), Dates.month(month)));
         warning.setVisibility(View.VISIBLE);
     }
 

@@ -23,7 +23,9 @@ public interface AccountDao {
             + " - COALESCE((SELECT SUM(tr.transfer_amount_cents) FROM transfers tr"
             + " WHERE tr.transfer_from_account_id = a.account_id), 0)"
             + " - COALESCE((SELECT SUM(i.invoice_paid_cents) FROM invoices i"
-            + " WHERE i.invoice_payment_account_id = a.account_id AND i.invoice_status = 'PAGA'), 0))";
+            + " WHERE i.invoice_payment_account_id = a.account_id AND i.invoice_status = 'PAGA'), 0)"
+            + " - COALESCE((SELECT SUM(gm.movement_amount_cents) FROM goal_movements gm"
+            + " WHERE gm.account_id = a.account_id), 0))";
 
     @Insert
     long insert(Account account);

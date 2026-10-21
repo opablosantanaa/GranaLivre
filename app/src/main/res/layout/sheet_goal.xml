@@ -105,7 +105,14 @@
                 android:layout_marginTop="4dp"
                 android:textColor="@color/gl_text_secondary" />
 
+            <com.opablosantanaa.granalivre.ui.widget.SegmentedControl
+                android:id="@+id/mode"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp" />
+
             <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/add_layout"
                 style="@style/SheetField"
                 android:layout_marginTop="16dp"
                 android:hint="@string/goal_add"
@@ -118,6 +125,19 @@
                     android:digits="0123456789,."
                     android:inputType="numberDecimal" />
             </com.google.android.material.textfield.TextInputLayout>
+
+            <TextView
+                android:id="@+id/account_label"
+                style="@style/SheetLabel"
+                android:text="@string/goal_from_account" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/accounts"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:chipSpacingVertical="4dp"
+                app:selectionRequired="true"
+                app:singleSelection="true" />
         </LinearLayout>
 
         <TextView
