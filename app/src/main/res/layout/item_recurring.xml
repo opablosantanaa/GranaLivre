@@ -91,7 +91,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:drawablePadding="6dp"
-            android:fontFamily="@font/schibsted_semibold"
+            android:fontFamily="@font/jakarta_semibold"
             app:drawableStartCompat="@drawable/bg_dot_legend" />
 
         <com.google.android.material.button.MaterialButton
@@ -99,7 +99,7 @@
             style="@style/Widget.Material3.Button.TonalButton"
             android:layout_width="wrap_content"
             android:layout_height="40dp"
-            android:fontFamily="@font/schibsted_semibold"
+            android:fontFamily="@font/jakarta_semibold"
             android:insetTop="0dp"
             android:insetBottom="0dp"
             android:letterSpacing="0"

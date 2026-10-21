@@ -61,7 +61,7 @@ public class HeatmapView extends View {
         d = getResources().getDisplayMetrics().density;
         float sp = getResources().getDisplayMetrics().scaledDensity;
         label.setTextSize(10 * sp);
-        label.setTypeface(ResourcesCompat.getFont(context, R.font.schibsted_regular));
+        label.setTypeface(ResourcesCompat.getFont(context, R.font.jakarta_regular));
         ring.setStyle(Paint.Style.STROKE);
         ring.setStrokeWidth(1.5f * d);
         setFocusable(true);

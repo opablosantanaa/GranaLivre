@@ -18,14 +18,51 @@ import com.google.android.material.textfield.TextInputLayout;
 import com.opablosantanaa.granalivre.R;
 import com.opablosantanaa.granalivre.repository.RepositoryCallback;
 import com.opablosantanaa.granalivre.ui.Dates;
+import com.opablosantanaa.granalivre.ui.FinanceAdvisor;
+import com.opablosantanaa.granalivre.ui.widget.CoinView;
+import com.opablosantanaa.granalivre.ui.widget.PlayfulDecor;
 
 import java.time.LocalDate;
 
 public class SetupScreen extends Screen {
     private LocalDate birth;
+    private PlayfulDecor decor;
+    private PlayfulDecor sky;
+    private int step;
 
     private static void revealOnKeyboard(NestedScrollView scroll, View target) {
         scroll.postDelayed(() -> scroll.smoothScrollTo(0, target.getBottom()), 250);
+    }
+
+    /** O mascote reage ao cadastro: curioso até saber o nome, feliz depois; pula quando a fala muda. */
+    private void updateBubble(View view) {
+        TextInputEditText name = view.findViewById(R.id.name);
+        String typed = name.getText() == null ? "" : name.getText().toString().trim();
+        String first = typed.isEmpty() ? "" : typed.split("\\s+")[0];
+        int step = first.isEmpty() ? 0 : birth == null ? 1 : 2;
+        String text = step == 0 ? getString(R.string.setup_title)
+                : step == 1 ? getString(R.string.setup_bubble_named, first)
+                : getString(R.string.setup_bubble_ready, first);
+        CoinView mascot = view.findViewById(R.id.mascot);
+        mascot.setCurious(step == 0);
+        mascot.setMood(FinanceAdvisor.Mood.PRAISE, false);
+        ((TextView) view.findViewById(R.id.bubble)).setText(text);
+        if (step != this.step) mascot.hop();
+        this.step = step;
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        if (decor != null) decor.start();
+        if (sky != null) sky.start();
+    }
+
+    @Override
+    public void onStop() {
+        if (decor != null) decor.stop();
+        if (sky != null) sky.stop();
+        super.onStop();
     }
 
     public SetupScreen() {
@@ -41,6 +78,20 @@ public class SetupScreen extends Screen {
             sheet.setPadding(sheet.getPaddingLeft(), sheet.getPaddingTop(),
                     sheet.getPaddingRight(), dp(24) + app().bottomInset());
         });
+
+        decor = new PlayfulDecor(view.findViewById(R.id.setup_stage))
+                .sparkle(0.04f, 0.10f, 22)
+                .sparkle(0.30f, 0.92f, 18)
+                .sparkle(0.96f, 0.06f, 26);
+        sky = new PlayfulDecor(view.findViewById(R.id.setup_sky))
+                .badge(0.18f, 0.30f, 52, R.drawable.ic_cat_salary, 0xFF22A06B, 0xFF2EC4B6)
+                .badge(0.78f, 0.22f, 56, R.drawable.ic_target, 0xFFFFB547, 0xFFF06292)
+                .badge(0.62f, 0.70f, 44, R.drawable.ic_card, 0xFF64B5F6, 0xFF9575CD)
+                .sparkle(0.40f, 0.18f, 20)
+                .sparkle(0.12f, 0.78f, 24);
+        CoinView mascot = view.findViewById(R.id.mascot);
+        mascot.setCurious(true);
+        mascot.setOnClickListener(v -> mascot.hop());
 
         TextInputLayout birthLayout = view.findViewById(R.id.birth_layout);
         TextInputLayout nameLayout = view.findViewById(R.id.name_layout);
@@ -59,6 +110,7 @@ public class SetupScreen extends Screen {
             new DatePickerDialog(requireContext(), (picker, y, m, d) -> {
                 birth = LocalDate.of(y, m + 1, d);
                 birthField.setText(Dates.shortDate(birth));
+                updateBubble(view);
             }, initial.getYear(), initial.getMonthValue() - 1, initial.getDayOfMonth()).show();
         };
         birthField.setOnClickListener(pickBirth);
@@ -71,6 +123,11 @@ public class SetupScreen extends Screen {
             if (keyboard != null) keyboard.hideSoftInputFromWindow(v.getWindowToken(), 0);
             if (birth == null) pickBirth.onClick(birthField);
             return true;
+        });
+        name.addTextChangedListener(new android.text.TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) {}
+            @Override public void onTextChanged(CharSequence s, int a, int b, int c) {}
+            @Override public void afterTextChanged(android.text.Editable s) { updateBubble(view); }
         });
         view.findViewById(R.id.back).setOnClickListener(v -> app().show(new SplashScreen()));
 

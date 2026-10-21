@@ -25,7 +25,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:checked="true"
-            android:fontFamily="@font/schibsted_regular"
+            android:fontFamily="@font/jakarta_regular"
             android:minHeight="48dp"
             android:textColor="@color/gl_text" />
 
@@ -33,7 +33,7 @@
             android:id="@+id/mode_partial"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:fontFamily="@font/schibsted_regular"
+            android:fontFamily="@font/jakarta_regular"
             android:minHeight="48dp"
             android:text="@string/settle_partial"
             android:textColor="@color/gl_text" />

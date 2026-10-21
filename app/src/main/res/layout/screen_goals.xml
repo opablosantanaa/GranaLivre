@@ -47,7 +47,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="48dp"
                 android:layout_marginTop="16dp"
-                android:fontFamily="@font/schibsted_semibold"
+                android:fontFamily="@font/jakarta_semibold"
                 android:letterSpacing="0"
                 android:text="@string/goals_new"
                 android:textAllCaps="false"

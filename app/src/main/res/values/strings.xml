@@ -7,11 +7,15 @@
     <string name="tab_analytics">Análises</string>
     <string name="tab_goals">Metas</string>
 
-    <string name="splash_headline">Seu dinheiro em ordem.\nSuas metas no ritmo certo.</string>
-    <string name="splash_caption">Contas, cartões, faturas e metas no mesmo lugar.</string>
+    <string name="splash_headline">Boas-vindas ao\nGrana Livre</string>
+    <string name="splash_caption">Seu assessor de bolso para contas, cartões, faturas e metas.</string>
+    <string name="splash_privacy">Seus dados ficam só neste aparelho.</string>
+    <string name="splash_mascot">Mascote do Grana Livre, uma moeda sorridente</string>
     <string name="splash_cta">Começar</string>
 
-    <string name="setup_title">Como podemos te chamar?</string>
+    <string name="setup_title">Oi! Sou seu assessor de finanças. Como posso te chamar?</string>
+    <string name="setup_bubble_named">Prazer, %1$s! Agora me conta: quando você nasceu?</string>
+    <string name="setup_bubble_ready">Tudo pronto, %1$s! É só tocar em Começar a usar.</string>
     <string name="setup_caption">Seus dados ficam só neste aparelho. As categorias de receitas e despesas já vêm prontas.</string>
     <string name="setup_name_placeholder">Seu nome ou apelido</string>
     <string name="setup_birth_placeholder">dd/mm/aaaa</string>

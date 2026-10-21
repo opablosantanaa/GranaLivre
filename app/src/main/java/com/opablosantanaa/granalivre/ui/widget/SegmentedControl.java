@@ -61,7 +61,7 @@ public class SegmentedControl extends LinearLayout {
             if (options.length > 3) {
                 item.setAutoSizeTextTypeUniformWithConfiguration(10, 12, 1, TypedValue.COMPLEX_UNIT_SP);
             }
-            item.setTypeface(ResourcesCompat.getFont(getContext(), R.font.schibsted_medium));
+            item.setTypeface(ResourcesCompat.getFont(getContext(), R.font.jakarta_medium));
             item.setIncludeFontPadding(false);
             item.setMinHeight(dp(34));
             int index = i;
