@@ -10,3 +10,5 @@
 #-keepclassmembers class fqcn.of.javascript.interface.for.webview {
 #   public *;
 #}
+# PDFBox-Android: o decodificador JPEG 2000 é opcional e não vem no app
+-dontwarn com.gemalto.jp2.**

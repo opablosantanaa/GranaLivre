@@ -38,6 +38,12 @@ android {
     testOptions {
         unitTests.isIncludeAndroidResources = true
     }
+    packaging {
+        resources {
+            // Tabelas de criptografia pós-quântica do BouncyCastle (dependência do PDFBox) não são usadas
+            excludes += "org/bouncycastle/pqc/**"
+        }
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -56,6 +62,11 @@ dependencies {
 
     implementation("androidx.lifecycle:lifecycle-viewmodel:2.9.0")
     implementation("androidx.lifecycle:lifecycle-livedata:2.9.0")
+
+    // Leitura de extratos/comprovantes em PDF: texto com posição (PDFBox) e OCR para PDFs que são só imagem
+    implementation("com.tom-roush:pdfbox-android:2.0.27.0")
+    implementation("com.google.mlkit:text-recognition:16.0.1")
+    testImplementation("org.apache.pdfbox:pdfbox:2.0.27")
     
     implementation(libs.activity.ktx)
     implementation(libs.appcompat)
