@@ -122,8 +122,9 @@ public class GoalsScreen extends Screen {
                 String note = goal.getGoal_deadline() == null ? getString(R.string.goals_no_deadline)
                         : getString(R.string.goals_until, Dates.dayMonth(goal.getGoal_deadline())
                         + " " + goal.getGoal_deadline().getYear());
+                // metas usam verde (progresso); âmbar/vermelho ficam reservados aos alertas de orçamento
                 View row = progress(sheet, goal.getGoal_name(), percent(Math.min(ratio, 1f)), ratio,
-                        color(R.color.gl_accent),
+                        color(R.color.gl_income),
                         getString(R.string.goals_progress, Money.whole(goal.getGoal_saved_cents()),
                                 Money.whole(goal.getGoal_target_cents())),
                         ratio >= 1f ? getString(R.string.goal_done) : note,

@@ -150,7 +150,7 @@ public class RecurringScreen extends Screen {
         sheet.addView(header);
     }
 
-    private void row(LinearLayout sheet, Recurrence r, Rows.Lookup lookup) {
+    private void row(LinearLayout sheet, Recurrence r, Rows.Lookup lookup, boolean showFrequency) {
         View row = LayoutInflater.from(requireContext()).inflate(R.layout.item_recurring, sheet, false);
         Category category = r.getCategory_id() == null ? null : lookup.categories.get(r.getCategory_id());
         int tint = r.isRecurrence_active() ? CategoryStyle.color(category) : color(R.color.gl_text_secondary);
@@ -174,8 +174,10 @@ public class RecurringScreen extends Screen {
 
         RecurrenceStatus status = RecurrenceStatus.of(r, vm().pendingList.getValue(), vm().history.getValue(), LocalDate.now());
         TextView next = row.findViewById(R.id.next);
+        // dentro das seções "Mensais"/"Semanais"/"Anuais" a frequência já está no título
         next.setText(status.partial(r) ? getString(R.string.recurring_open_left, Money.plain(status.openCents))
-                : frequencyName(r.getRecurrence_frequency()));
+                : showFrequency ? frequencyName(r.getRecurrence_frequency()) : "");
+        next.setVisibility(next.getText().length() == 0 ? View.GONE : View.VISIBLE);
         TextView statusView = row.findViewById(R.id.status);
         int statusColor = statusColor(status);
         statusView.setText(statusText(status));
@@ -369,7 +371,7 @@ public class RecurringScreen extends Screen {
         }
         if (!attention.isEmpty()) {
             section(sheet, R.string.recurring_attention);
-            for (Recurrence r : attention) row(sheet, r, lookup);
+            for (Recurrence r : attention) row(sheet, r, lookup, true);
         }
         RecurrenceFrequency[] order = {RecurrenceFrequency.MENSAL, RecurrenceFrequency.SEMANAL, RecurrenceFrequency.ANUAL};
         int[] titles = {R.string.recurring_monthly, R.string.recurring_weekly, R.string.recurring_yearly};
@@ -381,7 +383,7 @@ public class RecurringScreen extends Screen {
                     section(sheet, titles[i]);
                     header = true;
                 }
-                row(sheet, r, lookup);
+                row(sheet, r, lookup, false);
             }
         }
         boolean header = false;
@@ -391,7 +393,7 @@ public class RecurringScreen extends Screen {
                 section(sheet, R.string.recurring_paused);
                 header = true;
             }
-            row(sheet, r, lookup);
+            row(sheet, r, lookup, true);
         }
     }
 }

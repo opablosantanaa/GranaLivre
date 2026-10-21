@@ -9,8 +9,11 @@ import android.content.res.ColorStateList;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.graphics.Rect;
+import android.view.TouchDelegate;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.PathInterpolator;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -39,6 +42,7 @@ import com.opablosantanaa.granalivre.entity.Recurrence;
 import com.opablosantanaa.granalivre.entity.TransactionType;
 import com.opablosantanaa.granalivre.entity.User;
 import com.opablosantanaa.granalivre.relation.AccountWithBalance;
+import com.opablosantanaa.granalivre.repository.PdfStatementReader;
 import com.opablosantanaa.granalivre.ui.Dates;
 import com.opablosantanaa.granalivre.ui.FinanceAdvisor;
 import com.opablosantanaa.granalivre.ui.MainViewModel;
@@ -88,7 +92,7 @@ public class HomeScreen extends Screen {
     private int tipIndex;
     private int balancePage;
 
-    private static final int MAX_STATEMENT_BYTES = 5 * 1024 * 1024;
+    private static final int MAX_STATEMENT_BYTES = 15 * 1024 * 1024;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final ActivityResultLauncher<String[]> pickStatement =
             registerForActivityResult(new ActivityResultContracts.OpenDocument(), this::onStatementPicked);
@@ -188,14 +192,15 @@ public class HomeScreen extends Screen {
             View bubble = view.findViewById(R.id.advisor_bubble);
             if (bubble.getVisibility() == View.VISIBLE) {
                 tipIndex = (tipIndex + 1) % Math.max(1, tips.size());
+                showTip(view);
             } else {
                 tipIndex = 0;
-                bubble.setVisibility(View.VISIBLE);
+                showTip(view);
+                openBubble(view);
             }
-            showTip(view);
         });
-        view.findViewById(R.id.advisor_close).setOnClickListener(v ->
-                view.findViewById(R.id.advisor_bubble).setVisibility(View.GONE));
+        view.findViewById(R.id.advisor_close).setOnClickListener(v -> closeBubble(view));
+        expandCloseTouchArea(view);
         view.findViewById(R.id.advisor_next).setOnClickListener(v -> {
             tipIndex = (tipIndex + 1) % Math.max(1, tips.size());
             coin.hop();
@@ -247,7 +252,11 @@ public class HomeScreen extends Screen {
                     if (out.size() > MAX_STATEMENT_BYTES) break;
                 }
                 if (out.size() > MAX_STATEMENT_BYTES) error = context.getString(R.string.import_too_big);
-                else statement = OfxParser.parse(out.toByteArray());
+                else if (PdfStatementReader.isPdf(out.toByteArray())) {
+                    statement = PdfStatementReader.read(context, out.toByteArray());
+                } else {
+                    statement = OfxParser.parse(out.toByteArray());
+                }
                 if (statement != null && statement.transactions.isEmpty() && statement.ledgerBalanceCents == null) {
                     error = context.getString(R.string.import_empty);
                     statement = null;
@@ -256,6 +265,8 @@ public class HomeScreen extends Screen {
                 error = context.getString(R.string.import_read_error);
             } catch (OfxException e) {
                 error = e.getMessage();
+            } catch (RuntimeException e) {
+                error = context.getString(R.string.import_read_error);
             }
             String finalError = error;
             OfxStatement finalStatement = statement;
@@ -387,13 +398,100 @@ view.findViewById(R.id.identity).setContentDescription(full + ", " + Dates.today
         FinanceAdvisor.Tip tip = tips.get(tipIndex);
         ((CoinView) view.findViewById(R.id.advisor)).setMood(tip.mood, false);
         ((TextView) view.findViewById(R.id.advisor_text)).setText(tip.text);
-        TextView title = view.findViewById(R.id.advisor_title);
-        title.setTextColor(color(tip.mood == FinanceAdvisor.Mood.ALERT ? R.color.gl_expense
-                : tip.mood == FinanceAdvisor.Mood.PRAISE ? R.color.gl_income : R.color.gl_primary));
-        MaterialButton next = view.findViewById(R.id.advisor_next);
-        next.setVisibility(tips.size() > 1 ? View.VISIBLE : View.GONE);
-        title.setText(tips.size() > 1 ? getString(R.string.advisor_title_count, tipIndex + 1, tips.size())
-                : getString(R.string.advisor_title));
+        int title;
+        int tone;
+        int icon;
+        switch (tip.mood) {
+            case ALERT:
+                title = R.string.advisor_title_alert;
+                tone = R.color.gl_expense;
+                icon = R.drawable.ic_alert;
+                break;
+            case WARN:
+                title = R.string.advisor_title_warn;
+                tone = R.color.gl_accent;
+                icon = R.drawable.ic_alert;
+                break;
+            case PRAISE:
+                title = R.string.advisor_title_praise;
+                tone = R.color.gl_income;
+                icon = R.drawable.ic_check;
+                break;
+            default:
+                title = R.string.advisor_title;
+                tone = R.color.gl_primary;
+                icon = R.drawable.ic_info;
+                break;
+        }
+        ((TextView) view.findViewById(R.id.advisor_title)).setText(title);
+        ImageView iconView = view.findViewById(R.id.advisor_icon);
+        iconView.setImageResource(icon);
+        iconView.setImageTintList(ColorStateList.valueOf(color(tone)));
+        view.findViewById(R.id.advisor_icon_bg).setBackgroundTintList(
+                ColorStateList.valueOf((color(tone) & 0x00FFFFFF) | 0x33000000));
+        boolean many = tips.size() > 1;
+        view.findViewById(R.id.advisor_footer).setVisibility(many ? View.VISIBLE : View.GONE);
+        ((TextView) view.findViewById(R.id.advisor_count)).setText(
+                getString(R.string.advisor_count, tipIndex + 1, tips.size()));
+        ((MaterialButton) view.findViewById(R.id.advisor_next)).setText(
+                tipIndex == tips.size() - 1 ? R.string.advisor_restart : R.string.advisor_next);
+    }
+
+    /**
+     * A linha do título tem só a altura do ícone (32dp) e o Android corta o toque do X nesse limite;
+     * o TouchDelegate devolve ao botão a área de toque de 48dp.
+     */
+    private void expandCloseTouchArea(View view) {
+        View card = view.findViewById(R.id.advisor_card);
+        View header = view.findViewById(R.id.advisor_header);
+        View close = view.findViewById(R.id.advisor_close);
+        card.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> {
+            Rect area = new Rect();
+            close.getHitRect(area);
+            area.offset(header.getLeft(), header.getTop());
+            int extra = Math.max(0, (dp(48) - area.height()) / 2);
+            area.top -= extra;
+            area.bottom += extra;
+            card.setTouchDelegate(new TouchDelegate(area, close));
+        });
+    }
+
+    /** Abre o balão com a ponta sob a moeda, crescendo a partir dela. */
+    private void openBubble(View view) {
+        View bubble = view.findViewById(R.id.advisor_bubble);
+        View coin = view.findViewById(R.id.advisor);
+        View tail = view.findViewById(R.id.advisor_tail);
+        bubble.setVisibility(View.VISIBLE);
+        bubble.setAlpha(0f);
+        bubble.post(() -> {
+            if (!isAdded()) return;
+            int[] coinAt = new int[2];
+            int[] bubbleAt = new int[2];
+            coin.getLocationInWindow(coinAt);
+            bubble.getLocationInWindow(bubbleAt);
+            float center = coinAt[0] + coin.getWidth() / 2f - bubbleAt[0];
+            tail.setTranslationX(center - tail.getWidth() / 2f);
+            bubble.setPivotX(center);
+            bubble.setPivotY(0f);
+            bubble.setScaleX(0.92f);
+            bubble.setScaleY(0.92f);
+            bubble.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(250)
+                    .setInterpolator(new PathInterpolator(0.05f, 0.7f, 0.1f, 1f)).start();
+        });
+    }
+
+    private void closeBubble(View view) {
+        View bubble = view.findViewById(R.id.advisor_bubble);
+        bubble.animate().alpha(0f).scaleX(0.92f).scaleY(0.92f).setDuration(150)
+                .setInterpolator(new PathInterpolator(0.3f, 0f, 0.8f, 0.15f))
+                .withEndAction(() -> {
+                    bubble.setVisibility(View.GONE);
+                    bubble.setAlpha(1f);
+                    bubble.setScaleX(1f);
+                    bubble.setScaleY(1f);
+                    view.findViewById(R.id.advisor).sendAccessibilityEvent(
+                            android.view.accessibility.AccessibilityEvent.TYPE_VIEW_FOCUSED);
+                }).start();
     }
 
     private void refreshBalances(View view) {

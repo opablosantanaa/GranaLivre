@@ -83,11 +83,15 @@ public class ImportSheet extends BaseSheet {
         header = getLayoutInflater().inflate(R.layout.item_import_header, rows, false);
         rows.setAdapter(adapter);
 
+        // OFX traz o código do banco ("0341"); o PDF traz o nome ("Banco do Brasil", "Itaú")
+        boolean named = statement.bankId != null && statement.bankId.matches(".*\\p{L}.*");
         String source = statement.bankId != null && statement.accountId != null
-                ? getString(R.string.import_bank, statement.bankId, statement.accountId)
+                ? getString(named ? R.string.import_bank_named : R.string.import_bank, statement.bankId, statement.accountId)
+                : statement.bankId != null && named ? statement.bankId
                 : statement.accountId != null ? statement.accountId : getString(R.string.app_name);
-        ((TextView) header.findViewById(R.id.source)).setText(
-                getString(R.string.import_source, source, statement.transactions.size()));
+        int count = statement.transactions.size();
+        ((TextView) header.findViewById(R.id.source)).setText(count == 1
+                ? getString(R.string.import_source_one, source) : getString(R.string.import_source, source, count));
         TextView period = header.findViewById(R.id.period);
         if (statement.start != null && statement.end != null) {
             period.setText(getString(R.string.import_period, Dates.shortDate(statement.start), Dates.shortDate(statement.end)));

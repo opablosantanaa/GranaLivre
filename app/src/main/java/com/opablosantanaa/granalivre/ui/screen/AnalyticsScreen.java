@@ -61,7 +61,7 @@ public class AnalyticsScreen extends Screen {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        padTop(view.findViewById(R.id.header), 8);
+        padTop(view.findViewById(R.id.header), 16);
         padBottomForTabs(view.findViewById(R.id.sheet), 8);
 
         SegmentedControl segmented = view.findViewById(R.id.period);
