@@ -7,6 +7,7 @@ import com.opablosantanaa.granalivre.dao.CardDao;
 import com.opablosantanaa.granalivre.dao.CategoryDao;
 import com.opablosantanaa.granalivre.dao.InvoiceDao;
 import com.opablosantanaa.granalivre.database.AppDatabase;
+import com.opablosantanaa.granalivre.domain.DefaultCategories;
 import com.opablosantanaa.granalivre.domain.InvoiceCalculator;
 import com.opablosantanaa.granalivre.entity.Account;
 import com.opablosantanaa.granalivre.entity.Card;
@@ -61,6 +62,22 @@ final class TransactionRules {
         require(category.getCategory_type() == type, "A categoria não corresponde ao tipo do lançamento");
     }
 
+    Long resolveCategory(long userId, Long categoryId, TransactionType type) {
+        if (categoryId != null) {
+            validateCategory(userId, categoryId, type);
+            return categoryId;
+        }
+        return fallbackCategory(categoryDao, userId, type);
+    }
+
+    static long fallbackCategory(CategoryDao categoryDao, long userId, TransactionType type) {
+        String name = DefaultCategories.fallbackName(type);
+        Category existing = categoryDao.findRootByName(userId, type, name);
+        if (existing != null) return existing.getCategory_id();
+        Category created = DefaultCategories.fallback(userId, type);
+        return categoryDao.insert(created);
+    }
+
     long resolveInvoiceId(Card card, LocalDate purchaseDate) {
         YearMonth month = InvoiceCalculator.referenceMonth(purchaseDate, card.getCard_closing_day());
         Invoice invoice = invoiceDao.findByCardAndMonth(card.getCard_id(), month);
@@ -79,7 +96,8 @@ final class TransactionRules {
     void prepare(FinancialTransaction transaction) {
         require(transaction.getTransaction_amount_cents() > 0, "O valor deve ser maior que zero");
         Card card = validateSource(transaction.getUser_id(), transaction.getAccount_id(), transaction.getCard_id());
-        validateCategory(transaction.getUser_id(), transaction.getCategory_id(), transaction.getTransaction_type());
+        transaction.setCategory_id(resolveCategory(transaction.getUser_id(), transaction.getCategory_id(),
+                transaction.getTransaction_type()));
         transaction.setInvoice_id(card == null ? null : resolveInvoiceId(card, transaction.getTransaction_date()));
     }
 }

@@ -48,14 +48,7 @@
             android:layout_marginStart="4dp" />
 
         <include
-            android:id="@+id/tab_fixed_expense"
-            layout="@layout/item_tab"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginStart="4dp" />
-
-        <include
-            android:id="@+id/tab_fixed_income"
+            android:id="@+id/tab_recurring"
             layout="@layout/item_tab"
             android:layout_width="48dp"
             android:layout_height="48dp"

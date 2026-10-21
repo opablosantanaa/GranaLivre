@@ -18,12 +18,18 @@ public final class RecurrenceStatus {
     public final LocalDate date;
     public final int overdueCount;
     public final long daysUntil;
+    /** Valor em aberto da ocorrência atual; menor que o da recorrência quando já houve pagamento parcial. */
+    public long openCents;
 
     private RecurrenceStatus(Kind kind, LocalDate date, int overdueCount, long daysUntil) {
         this.kind = kind;
         this.date = date;
         this.overdueCount = overdueCount;
         this.daysUntil = daysUntil;
+    }
+
+    public boolean partial(Recurrence r) {
+        return canSettle() && openCents > 0 && openCents < r.getRecurrence_amount_cents();
     }
 
     public boolean needsAttention() {
@@ -48,9 +54,25 @@ public final class RecurrenceStatus {
 
     public static RecurrenceStatus of(Recurrence r, List<FinancialTransaction> pending,
                                       List<FinancialTransaction> history, LocalDate today) {
+        RecurrenceStatus status = compute(r, pending, history, today);
+        status.openCents = r.getRecurrence_amount_cents();
+        FinancialTransaction first = null;
+        if (pending != null) {
+            for (FinancialTransaction t : pending) {
+                if (t.getRecurrence_id() == null || t.getRecurrence_id() != r.getRecurrence_id()) continue;
+                if (first == null || t.getTransaction_date().isBefore(first.getTransaction_date())) first = t;
+            }
+        }
+        if (first != null) status.openCents = first.getTransaction_amount_cents();
+        return status;
+    }
+
+    private static RecurrenceStatus compute(Recurrence r, List<FinancialTransaction> pending,
+                                            List<FinancialTransaction> history, LocalDate today) {
         if (!r.isRecurrence_active()) return new RecurrenceStatus(Kind.PAUSED, null, 0, 0);
         int overdue = 0;
         LocalDate oldest = null;
+        LocalDate upcoming = null;
         boolean dueToday = false;
         if (pending != null) {
             for (FinancialTransaction t : pending) {
@@ -61,11 +83,17 @@ public final class RecurrenceStatus {
                     if (oldest == null || date.isBefore(oldest)) oldest = date;
                 } else if (date.equals(today)) {
                     dueToday = true;
+                } else if (upcoming == null || date.isBefore(upcoming)) {
+                    upcoming = date;
                 }
             }
         }
         if (overdue > 0) return new RecurrenceStatus(Kind.OVERDUE, oldest, overdue, 0);
         if (dueToday) return new RecurrenceStatus(Kind.DUE_TODAY, today, 0, 0);
+        if (upcoming != null) {
+            long days = ChronoUnit.DAYS.between(today, upcoming);
+            return new RecurrenceStatus(days <= SOON_DAYS ? Kind.SOON : Kind.UPCOMING, upcoming, 0, days);
+        }
 
         LocalDate lastPaid = null;
         if (history != null) {

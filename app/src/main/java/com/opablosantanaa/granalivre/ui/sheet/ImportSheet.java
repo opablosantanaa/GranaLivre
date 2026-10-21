@@ -24,6 +24,7 @@ import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.materialswitch.MaterialSwitch;
 import com.opablosantanaa.granalivre.R;
 import com.opablosantanaa.granalivre.domain.ofx.OfxStatement;
+import com.opablosantanaa.granalivre.domain.DefaultCategories;
 import com.opablosantanaa.granalivre.entity.Category;
 import com.opablosantanaa.granalivre.relation.AccountWithBalance;
 import com.opablosantanaa.granalivre.repository.RepositoryCallback;
@@ -134,9 +135,9 @@ public class ImportSheet extends BaseSheet {
         });
     }
 
-    private String categoryName(Long id) {
-        Category category = MainViewModel.find(vm().categoryList.getValue(), id);
-        return category == null ? getString(R.string.import_no_category) : category.getCategory_name();
+    private String categoryName(Row row) {
+        Category category = MainViewModel.find(vm().categoryList.getValue(), row.categoryId);
+        return category == null ? DefaultCategories.fallbackName(row.type()) : category.getCategory_name();
     }
 
     private void bindRow(View item, Row row) {
@@ -166,7 +167,7 @@ public class ImportSheet extends BaseSheet {
             category.setClickable(false);
             item.setAlpha(0.55f);
         } else {
-            category.setText(categoryName(row.categoryId));
+            category.setText(categoryName(row));
             category.setTextColor(color(R.color.gl_primary));
             category.setContentDescription(getString(R.string.import_choose_category, row.source.description));
             category.setOnClickListener(v -> pickCategory(category, row));
@@ -177,18 +178,17 @@ public class ImportSheet extends BaseSheet {
     private void pickCategory(TextView anchor, Row row) {
         PopupMenu menu = new PopupMenu(requireContext(), anchor);
         List<Category> options = new ArrayList<>();
-        menu.getMenu().add(Menu.NONE, 0, 0, R.string.import_no_category);
         List<Category> all = vm().categoryList.getValue();
         if (all != null) {
             for (Category c : all) {
                 if (c.getCategory_type() != row.type() || c.getCategory_parent_id() != null) continue;
-                options.add(c);
                 menu.getMenu().add(Menu.NONE, options.size(), options.size(), c.getCategory_name());
+                options.add(c);
             }
         }
         menu.setOnMenuItemClickListener(item -> {
-            row.categoryId = item.getItemId() == 0 ? null : options.get(item.getItemId() - 1).getCategory_id();
-            anchor.setText(categoryName(row.categoryId));
+            row.categoryId = options.get(item.getItemId()).getCategory_id();
+            anchor.setText(categoryName(row));
             return true;
         });
         menu.show();

@@ -20,6 +20,7 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.opablosantanaa.granalivre.entity.TransactionType;
 import com.opablosantanaa.granalivre.ui.MainViewModel;
 import com.opablosantanaa.granalivre.ui.Session;
 import com.opablosantanaa.granalivre.ui.screen.AnalyticsScreen;
@@ -34,17 +35,16 @@ import com.opablosantanaa.granalivre.ui.prism.PrismView;
 public class App extends AppCompatActivity {
     public static final int TAB_HOME = 0;
     public static final int TAB_MOVES = 1;
-    public static final int TAB_FIXED_EXPENSE = 2;
-    public static final int TAB_FIXED_INCOME = 3;
-    public static final int TAB_ANALYTICS = 4;
-    public static final int TAB_GOALS = 5;
+    public static final int TAB_RECURRING = 2;
+    public static final int TAB_ANALYTICS = 3;
+    public static final int TAB_GOALS = 4;
 
-    private static final int[] TAB_IDS = {R.id.tab_home, R.id.tab_moves, R.id.tab_fixed_expense,
-            R.id.tab_fixed_income, R.id.tab_analytics, R.id.tab_goals};
-    private static final int[] TAB_ICONS = {R.drawable.ic_home, R.drawable.ic_swap, R.drawable.ic_fixed_expense,
-            R.drawable.ic_fixed_income, R.drawable.ic_chart, R.drawable.ic_target};
-    private static final int[] TAB_LABELS = {R.string.tab_home, R.string.tab_moves, R.string.tab_fixed_expense,
-            R.string.tab_fixed_income, R.string.tab_analytics, R.string.tab_goals};
+    private static final int[] TAB_IDS = {R.id.tab_home, R.id.tab_moves, R.id.tab_recurring,
+            R.id.tab_analytics, R.id.tab_goals};
+    private static final int[] TAB_ICONS = {R.drawable.ic_home, R.drawable.ic_swap, R.drawable.ic_repeat,
+            R.drawable.ic_chart, R.drawable.ic_target};
+    private static final int[] TAB_LABELS = {R.string.tab_home, R.string.tab_moves, R.string.tab_recurring,
+            R.string.tab_analytics, R.string.tab_goals};
 
     private PrismView prism;
     private View tabbar;
@@ -125,8 +125,7 @@ public class App extends AppCompatActivity {
 
     private static Fragment createTab(int tab) {
         if (tab == TAB_MOVES) return new MovesScreen();
-        if (tab == TAB_FIXED_EXPENSE) return RecurringScreen.expenses();
-        if (tab == TAB_FIXED_INCOME) return RecurringScreen.incomes();
+        if (tab == TAB_RECURRING) return new RecurringScreen();
         if (tab == TAB_ANALYTICS) return new AnalyticsScreen();
         if (tab == TAB_GOALS) return new GoalsScreen();
         return new HomeScreen();
@@ -155,6 +154,13 @@ public class App extends AppCompatActivity {
         if (target == null) transaction.add(R.id.container, createTab(tab), tabTag(tab));
         else transaction.show(target);
         transaction.commit();
+    }
+
+    public void showRecurring(TransactionType type) {
+        Fragment current = getSupportFragmentManager().findFragmentByTag(tabTag(TAB_RECURRING));
+        if (current instanceof RecurringScreen) ((RecurringScreen) current).setType(type);
+        else RecurringScreen.pendingType = type;
+        showTab(TAB_RECURRING);
     }
 
     public void signedIn(long userId) {

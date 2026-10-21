@@ -19,12 +19,25 @@ public final class DefaultCategories {
         add(categories, userId, "Educação", TransactionType.DESPESA, 0xFF9575CD);
         add(categories, userId, "Lazer", TransactionType.DESPESA, 0xFFF06292);
         add(categories, userId, "Compras", TransactionType.DESPESA, 0xFF4DB6AC);
-        add(categories, userId, "Outras despesas", TransactionType.DESPESA, 0xFF90A4AE);
+        add(categories, userId, OTHER_EXPENSES, TransactionType.DESPESA, 0xFF90A4AE);
         add(categories, userId, "Salário", TransactionType.RECEITA, 0xFF43A047);
         add(categories, userId, "Investimentos", TransactionType.RECEITA, 0xFF1E88E5);
         add(categories, userId, "Presentes", TransactionType.RECEITA, 0xFFD81B60);
-        add(categories, userId, "Outras receitas", TransactionType.RECEITA, 0xFF757575);
+        add(categories, userId, OTHER_INCOMES, TransactionType.RECEITA, 0xFF757575);
         return categories;
+    }
+
+    public static final String OTHER_EXPENSES = "Outras despesas";
+    public static final String OTHER_INCOMES = "Outras receitas";
+
+    public static String fallbackName(TransactionType type) {
+        return type == TransactionType.RECEITA ? OTHER_INCOMES : OTHER_EXPENSES;
+    }
+
+    public static Category fallback(long userId, TransactionType type) {
+        List<Category> one = new ArrayList<>();
+        add(one, userId, fallbackName(type), type, type == TransactionType.RECEITA ? 0xFF757575 : 0xFF90A4AE);
+        return one.get(0);
     }
 
     private static void add(List<Category> categories, long userId, String name, TransactionType type, int color) {

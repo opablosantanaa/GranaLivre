@@ -135,6 +135,7 @@ public class MainViewModel extends AndroidViewModel {
 
     public void setUserId(long id) {
         if (userId.getValue() == null || userId.getValue() != id) {
+            categories.adoptOrphans(id);
             userId.setValue(id);
         }
     }

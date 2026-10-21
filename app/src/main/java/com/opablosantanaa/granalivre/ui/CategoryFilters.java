@@ -36,7 +36,6 @@ public final class CategoryFilters {
                         category.getCategory_id() == selectedId);
             }
         }
-        add(context, group, context.getString(R.string.analytics_no_category), -1L, selectedId == -1L);
         group.setOnCheckedStateChangeListener((chips, checkedIds) -> {
             long id = ALL;
             if (!checkedIds.isEmpty()) {

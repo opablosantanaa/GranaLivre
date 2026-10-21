@@ -4,13 +4,16 @@ import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.widget.TextViewCompat;
 
 import com.google.android.material.button.MaterialButton;
@@ -31,6 +34,7 @@ import com.opablosantanaa.granalivre.ui.RecurrenceStatus;
 import com.opablosantanaa.granalivre.ui.Rows;
 import com.opablosantanaa.granalivre.ui.sheet.AccountSheet;
 import com.opablosantanaa.granalivre.ui.sheet.RecurrenceSheet;
+import com.opablosantanaa.granalivre.ui.widget.SegmentedControl;
 
 import java.time.LocalDate;
 import java.time.format.TextStyle;
@@ -38,49 +42,71 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RecurringScreen extends Screen {
-    private static final String ARG_TYPE = "type";
+    private static final String STATE_TYPE = "type";
+    /** Tipo pedido antes de a aba existir (ex.: aviso da tela inicial). */
+    public static TransactionType pendingType;
+
+    private TransactionType type = TransactionType.DESPESA;
 
     public RecurringScreen() {
         super(R.layout.screen_recurring);
     }
 
-    public static RecurringScreen expenses() {
-        return of(TransactionType.DESPESA);
-    }
-
-    public static RecurringScreen incomes() {
-        return of(TransactionType.RECEITA);
-    }
-
-    private static RecurringScreen of(TransactionType type) {
-        RecurringScreen screen = new RecurringScreen();
-        Bundle args = new Bundle();
-        args.putString(ARG_TYPE, type.name());
-        screen.setArguments(args);
-        return screen;
-    }
-
     private TransactionType type() {
-        return TransactionType.valueOf(requireArguments().getString(ARG_TYPE, TransactionType.DESPESA.name()));
+        return type;
     }
 
     private boolean income() {
-        return type() == TransactionType.RECEITA;
+        return type == TransactionType.RECEITA;
+    }
+
+    public void setType(TransactionType next) {
+        if (next == type) return;
+        type = next;
+        View view = getView();
+        if (view == null) return;
+        ((SegmentedControl) view.findViewById(R.id.type)).select(income() ? 1 : 0, false);
+        bindType(view);
+        renderLater(view);
     }
 
     @Override
     public int tab() {
-        return income() ? App.TAB_FIXED_INCOME : App.TAB_FIXED_EXPENSE;
+        return App.TAB_RECURRING;
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(STATE_TYPE, type.name());
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        if (savedInstanceState != null) {
+            type = TransactionType.valueOf(savedInstanceState.getString(STATE_TYPE, type.name()));
+        }
+        if (pendingType != null) {
+            type = pendingType;
+            pendingType = null;
+        }
         padTop(view.findViewById(R.id.header), 16);
         padBottomForTabs(view.findViewById(R.id.sheet), 8);
-        ((TextView) view.findViewById(R.id.title)).setText(
-                income() ? R.string.recurring_income_title : R.string.recurring_expense_title);
+        SegmentedControl typeControl = view.findViewById(R.id.type);
+        typeControl.setOptions(getString(R.string.analytics_type_expense), getString(R.string.analytics_type_income));
+        typeControl.setPalette(color(R.color.gl_on_silk_line), color(R.color.gl_on_silk_secondary),
+                color(R.color.gl_on_silk), color(R.color.gl_silk_backdrop));
+        typeControl.setContentDescription(getString(R.string.recurring_type_choice));
+        typeControl.select(income() ? 1 : 0, false);
+        typeControl.setOnChange(index -> {
+            TransactionType next = index == 1 ? TransactionType.RECEITA : TransactionType.DESPESA;
+            if (next == type) return;
+            type = next;
+            bindType(view);
+            renderLater(view);
+        });
+        bindType(view);
         MaterialButton create = view.findViewById(R.id.create);
-        create.setText(income() ? R.string.recurring_new_income : R.string.recurring_new_expense);
         create.setOnClickListener(v -> {
             List<?> accounts = vm().accountList.getValue();
             if (accounts == null || accounts.isEmpty()) {
@@ -97,6 +123,11 @@ public class RecurringScreen extends Screen {
         vm.cardList.observe(getViewLifecycleOwner(), v -> renderLater(view));
         vm.pendingList.observe(getViewLifecycleOwner(), v -> renderLater(view));
         vm.history.observe(getViewLifecycleOwner(), v -> renderLater(view));
+    }
+
+    private void bindType(View view) {
+        ((MaterialButton) view.findViewById(R.id.create)).setText(
+                income() ? R.string.recurring_new_income : R.string.recurring_new_expense);
     }
 
     private String rule(Recurrence r) {
@@ -141,10 +172,10 @@ public class RecurringScreen extends Screen {
         amount.setTextColor(color(!r.isRecurrence_active() ? R.color.gl_text_secondary
                 : income() ? R.color.gl_income : R.color.gl_text));
 
-        TextView next = row.findViewById(R.id.next);
-        next.setText(frequencyName(r.getRecurrence_frequency()));
-
         RecurrenceStatus status = RecurrenceStatus.of(r, vm().pendingList.getValue(), vm().history.getValue(), LocalDate.now());
+        TextView next = row.findViewById(R.id.next);
+        next.setText(status.partial(r) ? getString(R.string.recurring_open_left, Money.plain(status.openCents))
+                : frequencyName(r.getRecurrence_frequency()));
         TextView statusView = row.findViewById(R.id.status);
         int statusColor = statusColor(status);
         statusView.setText(statusText(status));
@@ -210,35 +241,89 @@ public class RecurringScreen extends Screen {
 
     private void confirmSettle(Recurrence r, RecurrenceStatus status, View button) {
         LocalDate today = LocalDate.now();
-        String amount = Money.plain(r.getRecurrence_amount_cents());
+        long open = status.openCents > 0 ? status.openCents : r.getRecurrence_amount_cents();
+        String amount = Money.plain(open);
         String message = status.date == null || status.date.equals(today)
                 ? getString(R.string.settle_message_same, amount, r.getRecurrence_description(), Dates.shortDate(today))
                 : getString(R.string.settle_message, amount, r.getRecurrence_description(), Dates.shortDate(today),
                 Dates.shortDate(status.date));
         int title = income() ? R.string.settle_receive_title : R.string.settle_pay_title;
-        new MaterialAlertDialogBuilder(requireContext())
-                .setTitle(title)
-                .setMessage(message)
-                .setNegativeButton(R.string.back, null)
-                .setPositiveButton(title, (d, w) -> {
-                    button.setEnabled(false);
-                    vm().recurrences.settle(r, today, new RepositoryCallback<Void>() {
-                        @Override
-                        public void onSuccess(Void result) {
-                            if (!isAdded()) return;
-                            Toast.makeText(requireContext(), income() ? R.string.settle_received_toast
-                                    : R.string.settle_paid_toast, Toast.LENGTH_SHORT).show();
-                        }
 
-                        @Override
-                        public void onError(Exception e) {
-                            if (!isAdded()) return;
-                            button.setEnabled(true);
-                            Toast.makeText(requireContext(), e.getMessage(), Toast.LENGTH_LONG).show();
-                        }
-                    });
-                })
-                .show();
+        View content = getLayoutInflater().inflate(R.layout.dialog_settle, null, false);
+        ((TextView) content.findViewById(R.id.message)).setText(message);
+        ((TextView) content.findViewById(R.id.mode_full)).setText(getString(R.string.settle_full, amount));
+        RadioGroup mode = content.findViewById(R.id.mode);
+        View partialRow = content.findViewById(R.id.partial_row);
+        View partialHint = content.findViewById(R.id.partial_hint);
+        EditText partialAmount = content.findViewById(R.id.amount);
+        TextView error = content.findViewById(R.id.error);
+        mode.setOnCheckedChangeListener((group, checked) -> {
+            boolean partial = checked == R.id.mode_partial;
+            partialRow.setVisibility(partial ? View.VISIBLE : View.GONE);
+            partialHint.setVisibility(partial ? View.VISIBLE : View.GONE);
+            content.findViewById(R.id.message).setVisibility(partial ? View.GONE : View.VISIBLE);
+            error.setVisibility(View.GONE);
+            if (partial) partialAmount.requestFocus();
+        });
+
+        AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(title)
+                .setView(content)
+                .setNegativeButton(R.string.back, null)
+                .setPositiveButton(title, null)
+                .create();
+        dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            if (mode.getCheckedRadioButtonId() != R.id.mode_partial) {
+                dialog.dismiss();
+                button.setEnabled(false);
+                vm().recurrences.settle(r, today, settleCallback(button, false));
+                return;
+            }
+            long cents = Money.parse(partialAmount.getText().toString());
+            if (cents <= 0) {
+                error.setText(R.string.error_amount);
+                error.setVisibility(View.VISIBLE);
+                return;
+            }
+            if (cents > open) {
+                error.setText(getString(R.string.settle_partial_too_much, amount));
+                error.setVisibility(View.VISIBLE);
+                return;
+            }
+            dialog.dismiss();
+            button.setEnabled(false);
+            vm().recurrences.settlePartial(r, cents, today, new RepositoryCallback<Boolean>() {
+                @Override
+                public void onSuccess(Boolean settled) {
+                    settleCallback(button, !settled).onSuccess(null);
+                }
+
+                @Override
+                public void onError(Exception e) {
+                    settleCallback(button, true).onError(e);
+                }
+            });
+        }));
+        dialog.show();
+    }
+
+    private RepositoryCallback<Void> settleCallback(View button, boolean partial) {
+        return new RepositoryCallback<Void>() {
+            @Override
+            public void onSuccess(Void result) {
+                if (!isAdded()) return;
+                Toast.makeText(requireContext(), partial ? R.string.settle_partial_toast
+                        : income() ? R.string.settle_received_toast : R.string.settle_paid_toast,
+                        Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onError(Exception e) {
+                if (!isAdded()) return;
+                button.setEnabled(true);
+                Toast.makeText(requireContext(), e.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        };
     }
 
     private void renderLater(View view) {
