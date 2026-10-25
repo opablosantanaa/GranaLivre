@@ -77,7 +77,7 @@ public class UserRepository extends BaseRepository {
             require(birthDate != null, "Informe a data de nascimento");
             User user = new User();
             user.setUser_name(name == null ? "" : name.trim());
-            user.setUser_email(LOCAL_EMAIL_PREFIX + UUID.randomUUID() + LOCAL_EMAIL_DOMAIN);
+            user.setUser_email(newLocalEmail());
             user.setUser_birth_date(birthDate);
             validateProfile(user);
             return database.runInTransaction(() -> {
@@ -86,6 +86,10 @@ public class UserRepository extends BaseRepository {
                 return userId;
             });
         }, callback);
+    }
+
+    static String newLocalEmail() {
+        return LOCAL_EMAIL_PREFIX + UUID.randomUUID() + LOCAL_EMAIL_DOMAIN;
     }
 
     public static boolean isLocalProfile(User user) {

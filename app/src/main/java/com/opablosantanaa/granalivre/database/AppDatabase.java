@@ -9,6 +9,7 @@ import androidx.room.TypeConverters;
 
 import com.opablosantanaa.granalivre.converter.Converters;
 import com.opablosantanaa.granalivre.dao.AccountDao;
+import com.opablosantanaa.granalivre.dao.BackupDao;
 import com.opablosantanaa.granalivre.dao.BudgetDao;
 import com.opablosantanaa.granalivre.dao.CardDao;
 import com.opablosantanaa.granalivre.dao.CategoryDao;
@@ -20,6 +21,7 @@ import com.opablosantanaa.granalivre.dao.RecurrenceDao;
 import com.opablosantanaa.granalivre.dao.TransferDao;
 import com.opablosantanaa.granalivre.dao.UserDao;
 import com.opablosantanaa.granalivre.entity.Account;
+import com.opablosantanaa.granalivre.entity.BackupId;
 import com.opablosantanaa.granalivre.entity.Budget;
 import com.opablosantanaa.granalivre.entity.Card;
 import com.opablosantanaa.granalivre.entity.Category;
@@ -47,8 +49,9 @@ import java.util.concurrent.Executors;
         FinancialTransaction.class,
         Budget.class,
         Goal.class,
-        GoalMovement.class},
-        version = 3,
+        GoalMovement.class,
+        BackupId.class},
+        version = 4,
         exportSchema = true)
 @TypeConverters(Converters.class)
 public abstract class AppDatabase extends RoomDatabase {
@@ -71,6 +74,7 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract FinancialTransactionDao financialTransactionDao();
     public abstract BudgetDao budgetDao();
     public abstract GoalDao goalDao();
+    public abstract BackupDao backupDao();
 
     public static AppDatabase getInstance(Context context) {
         if (INSTANCE == null) {
@@ -78,7 +82,8 @@ public abstract class AppDatabase extends RoomDatabase {
                 if (INSTANCE == null) {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                                     AppDatabase.class, DATABASE_NAME)
-                            .addMigrations(Migrations.MIGRATION_1_2, Migrations.MIGRATION_2_3)
+                            .addMigrations(Migrations.MIGRATION_1_2, Migrations.MIGRATION_2_3,
+                                    Migrations.MIGRATION_3_4)
                             .build();
                 }
             }

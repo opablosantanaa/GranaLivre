@@ -1,13 +1,18 @@
 package com.opablosantanaa.granalivre;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.TooltipCompat;
 import androidx.core.content.ContextCompat;
@@ -45,6 +50,9 @@ public class App extends AppCompatActivity {
             R.drawable.ic_chart, R.drawable.ic_target};
     private static final int[] TAB_LABELS = {R.string.tab_home, R.string.tab_moves, R.string.tab_recurring,
             R.string.tab_analytics, R.string.tab_goals};
+
+    private final ActivityResultLauncher<String> notificationPermission =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {});
 
     private PrismView prism;
     private View tabbar;
@@ -88,7 +96,15 @@ public class App extends AppCompatActivity {
         if (savedInstanceState == null) {
             if (userId > 0) showTab(TAB_HOME);
             else show(new SplashScreen());
+            if (userId > 0) askNotificationPermission();
         }
+    }
+
+    private void askNotificationPermission() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return;
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                == PackageManager.PERMISSION_GRANTED) return;
+        notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS);
     }
 
     private int backdropHolds;
@@ -167,6 +183,7 @@ public class App extends AppCompatActivity {
         Session.signIn(this, userId);
         viewModel.setUserId(userId);
         showTab(TAB_HOME);
+        askNotificationPermission();
     }
 
     public boolean isNight() {

@@ -16,7 +16,6 @@ public final class Migrations {
         }
     };
 
-    /** Reservas de dinheiro das contas para as metas. */
     public static final Migration MIGRATION_2_3 = new Migration(2, 3) {
         @Override
         public void migrate(@NonNull SupportSQLiteDatabase db) {
@@ -28,6 +27,17 @@ public final class Migrations {
                     + "ON DELETE CASCADE )");
             db.execSQL("CREATE INDEX IF NOT EXISTS `index_goal_movements_goal_id` ON `goal_movements` (`goal_id`)");
             db.execSQL("CREATE INDEX IF NOT EXISTS `index_goal_movements_account_id` ON `goal_movements` (`account_id`)");
+        }
+    };
+
+    public static final Migration MIGRATION_3_4 = new Migration(3, 4) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase db) {
+            db.execSQL("CREATE TABLE IF NOT EXISTS `backup_ids` (`backup_table` TEXT NOT NULL, "
+                    + "`local_id` INTEGER NOT NULL, `backup_uuid` TEXT NOT NULL, "
+                    + "PRIMARY KEY(`backup_table`, `local_id`))");
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_backup_ids_backup_table_backup_uuid` "
+                    + "ON `backup_ids` (`backup_table`, `backup_uuid`)");
         }
     };
 }

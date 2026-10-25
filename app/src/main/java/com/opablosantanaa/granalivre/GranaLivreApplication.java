@@ -5,6 +5,8 @@ import android.content.pm.ApplicationInfo;
 import android.os.StrictMode;
 
 import com.opablosantanaa.granalivre.ui.Session;
+import com.opablosantanaa.granalivre.worker.BackupWorker;
+import com.opablosantanaa.granalivre.worker.DueReminderWorker;
 import com.opablosantanaa.granalivre.worker.RecurrenceWorker;
 
 public class GranaLivreApplication extends Application {
@@ -29,5 +31,7 @@ public class GranaLivreApplication extends Application {
         }
         Session.applyTheme(Session.theme(this));
         RecurrenceWorker.schedule(this);
+        DueReminderWorker.schedule(this);
+        BackupWorker.schedule(this);
     }
 }

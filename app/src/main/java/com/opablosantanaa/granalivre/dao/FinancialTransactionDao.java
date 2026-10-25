@@ -50,6 +50,11 @@ public interface FinancialTransactionDao {
             + "ORDER BY transaction_date")
     LiveData<List<FinancialTransaction>> getPending(long userId);
 
+    @Query("SELECT * FROM transactions WHERE transaction_paid = 0 AND user_id = :userId "
+            + "AND transaction_type = 'DESPESA' AND card_id IS NULL "
+            + "AND transaction_date BETWEEN :start AND :end ORDER BY transaction_date")
+    List<FinancialTransaction> findPendingExpensesBetween(long userId, LocalDate start, LocalDate end);
+
     @Query("SELECT COALESCE(SUM(transaction_amount_cents), 0) FROM transactions "
             + "WHERE user_id = :userId AND transaction_type = :type "
             + "AND transaction_date BETWEEN :start AND :end")

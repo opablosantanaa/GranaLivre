@@ -1,6 +1,8 @@
 package com.opablosantanaa.granalivre.ui.sheet;
 
+import android.content.Context;
 import android.content.pm.ApplicationInfo;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -8,29 +10,190 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.FragmentManager;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.opablosantanaa.granalivre.R;
 import com.opablosantanaa.granalivre.entity.AccountType;
 import com.opablosantanaa.granalivre.entity.Card;
 import com.opablosantanaa.granalivre.entity.Category;
 import com.opablosantanaa.granalivre.entity.TransactionType;
 import com.opablosantanaa.granalivre.relation.AccountWithBalance;
+import com.opablosantanaa.granalivre.repository.BackupMerger;
+import com.opablosantanaa.granalivre.repository.BackupRepository;
+import com.opablosantanaa.granalivre.repository.BackupStorage;
 import com.opablosantanaa.granalivre.repository.DemoDataSeeder;
 import com.opablosantanaa.granalivre.repository.RepositoryCallback;
+import com.opablosantanaa.granalivre.ui.BackupImport;
 import com.opablosantanaa.granalivre.ui.Dates;
 import com.opablosantanaa.granalivre.ui.MainViewModel;
 import com.opablosantanaa.granalivre.ui.Money;
+import com.opablosantanaa.granalivre.ui.PasswordDialog;
 import com.opablosantanaa.granalivre.ui.Session;
 import com.opablosantanaa.granalivre.ui.widget.SegmentedControl;
+import com.opablosantanaa.granalivre.worker.BackupWorker;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public class ProfileSheet extends BaseSheet {
+    public static final String[] BACKUP_TYPES = {BackupStorage.MIME, "text/plain", "application/octet-stream"};
+
+    private final ActivityResultLauncher<Uri> pickFolder =
+            registerForActivityResult(new ActivityResultContracts.OpenDocumentTree(), this::onFolderPicked);
+    private final ActivityResultLauncher<String> createBackup =
+            registerForActivityResult(new ActivityResultContracts.CreateDocument(BackupStorage.MIME), this::onBackupCreated);
+    private final ActivityResultLauncher<String[]> openBackup =
+            registerForActivityResult(new ActivityResultContracts.OpenDocument(), this::onBackupPicked);
+
+    private BackupRepository backups;
+
     public ProfileSheet() {
         super(R.layout.sheet_profile);
+    }
+
+    private BackupRepository backups() {
+        if (backups == null) backups = new BackupRepository(requireContext());
+        return backups;
+    }
+
+    private void toast(String text) {
+        if (isAdded()) Toast.makeText(requireContext(), text, Toast.LENGTH_LONG).show();
+    }
+
+    private void showBackupFolder(View view) {
+        LinearLayout container = view.findViewById(R.id.backup);
+        container.removeAllViews();
+        BackupStorage storage = backups().storage();
+        String caption;
+        if (storage.folder() == null) {
+            caption = getString(R.string.backup_automatic_off);
+        } else {
+            String name = storage.folderName();
+            if (name == null) name = getString(R.string.backup_folder_unknown);
+            LocalDate last = storage.lastAutomatic();
+            caption = last == null ? getString(R.string.backup_automatic_on, name)
+                    : getString(R.string.backup_automatic_on_last, name, Dates.shortDate(last));
+        }
+        View row = row(container, getString(R.string.backup_automatic), caption, "");
+        row.setBackgroundResource(R.drawable.bg_row_ripple);
+        row.setClickable(true);
+        row.setOnClickListener(v -> pickFolder.launch(null));
+
+        boolean protectedBackup = storage.hasPassword();
+        View password = row(container, getString(R.string.backup_password),
+                getString(protectedBackup ? R.string.backup_password_on : R.string.backup_password_off), "");
+        password.setBackgroundResource(R.drawable.bg_row_ripple);
+        password.setClickable(true);
+        password.setOnClickListener(v -> {
+            if (protectedBackup) managePassword();
+            else PasswordDialog.create(requireContext(), this::savePassword);
+        });
+    }
+
+    private void refreshBackup() {
+        View view = getView();
+        if (view != null) showBackupFolder(view);
+    }
+
+    private void managePassword() {
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.backup_password)
+                .setMessage(R.string.backup_password_manage_message)
+                .setNegativeButton(R.string.back, null)
+                .setNeutralButton(R.string.backup_password_remove, (d, w) -> confirmRemovePassword())
+                .setPositiveButton(R.string.backup_password_change, (d, w) ->
+                        PasswordDialog.create(requireContext(), this::savePassword))
+                .show();
+    }
+
+    private void confirmRemovePassword() {
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.backup_password_remove)
+                .setMessage(R.string.backup_password_remove_message)
+                .setNegativeButton(R.string.back, null)
+                .setPositiveButton(R.string.backup_password_remove, (d, w) -> {
+                    backups().storage().clearPassword();
+                    backupAgain();
+                    toast(getString(R.string.backup_password_removed));
+                    refreshBackup();
+                })
+                .show();
+    }
+
+    private void savePassword(String password) {
+        backups().setPassword(password, new RepositoryCallback<Void>() {
+            @Override
+            public void onSuccess(Void result) {
+                if (!isAdded()) return;
+                backupAgain();
+                toast(getString(R.string.backup_password_saved));
+                refreshBackup();
+            }
+
+            @Override
+            public void onError(Exception e) {
+                toast(e.getMessage());
+            }
+        });
+    }
+
+    private void backupAgain() {
+        if (backups().storage().folder() != null) BackupWorker.runNow(requireContext());
+    }
+
+    private void onFolderPicked(@Nullable Uri tree) {
+        if (tree == null || !isAdded()) return;
+        try {
+            backups().storage().setFolder(tree);
+        } catch (SecurityException e) {
+            toast(e.getMessage());
+            return;
+        }
+        BackupWorker.runNow(requireContext());
+        toast(getString(R.string.backup_automatic_enabled));
+        refreshBackup();
+    }
+
+    private void onBackupCreated(@Nullable Uri document) {
+        if (document == null || !isAdded()) return;
+        backups().exportTo(vm().getUserId(), document, new RepositoryCallback<Void>() {
+            @Override
+            public void onSuccess(Void result) {
+                if (isAdded()) toast(getString(R.string.backup_saved));
+            }
+
+            @Override
+            public void onError(Exception e) {
+                toast(e.getMessage());
+            }
+        });
+    }
+
+    private void onBackupPicked(@Nullable Uri document) {
+        if (document == null || !isAdded()) return;
+        BackupImport.confirm(this, backups(), document, R.string.backup_import, R.string.backup_import_message,
+                R.string.backup_import_confirm, password -> merge(document, password));
+    }
+
+    private void merge(Uri document, @Nullable String password) {
+        Context context = requireContext().getApplicationContext();
+        backups().mergeInto(vm().getUserId(), document, password, new RepositoryCallback<BackupMerger.Result>() {
+            @Override
+            public void onSuccess(BackupMerger.Result result) {
+                Toast.makeText(context, context.getString(R.string.backup_imported, result.added, result.updated,
+                        result.kept), Toast.LENGTH_LONG).show();
+            }
+
+            @Override
+            public void onError(Exception e) {
+                Toast.makeText(context, e.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
     private static int accountKind(AccountType type) {
@@ -131,7 +294,12 @@ public class ProfileSheet extends BaseSheet {
         view.findViewById(R.id.add_category).setOnClickListener(v ->
                 open(CategorySheet.create(TransactionType.DESPESA), "category"));
 
-        boolean debuggable = (requireContext().getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        showBackupFolder(view);
+        view.findViewById(R.id.backup_save).setOnClickListener(v ->
+                createBackup.launch(BackupStorage.fileName(LocalDate.now())));
+        view.findViewById(R.id.backup_import).setOnClickListener(v -> openBackup.launch(BACKUP_TYPES));
+
+        boolean debuggable =(requireContext().getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
         View demo = view.findViewById(R.id.demo);
         demo.setVisibility(debuggable && (accountList == null || accountList.isEmpty()) ? View.VISIBLE : View.GONE);
         demo.setOnClickListener(v -> {

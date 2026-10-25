@@ -1,19 +1,30 @@
 package com.opablosantanaa.granalivre.ui.screen;
 
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.FrameLayout;
+import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.opablosantanaa.granalivre.R;
+import com.opablosantanaa.granalivre.repository.BackupRepository;
+import com.opablosantanaa.granalivre.repository.RepositoryCallback;
+import com.opablosantanaa.granalivre.ui.BackupImport;
 import com.opablosantanaa.granalivre.ui.FinanceAdvisor;
+import com.opablosantanaa.granalivre.ui.sheet.ProfileSheet;
 import com.opablosantanaa.granalivre.ui.widget.CoinView;
 import com.opablosantanaa.granalivre.ui.widget.PlayfulDecor;
 
 public class SplashScreen extends Screen {
     private static final long HOP_EVERY_MS = 3200;
+
+    private final ActivityResultLauncher<String[]> openBackup =
+            registerForActivityResult(new ActivityResultContracts.OpenDocument(), this::onBackupPicked);
 
     private PlayfulDecor decor;
     private Runnable hop;
@@ -57,6 +68,28 @@ public class SplashScreen extends Screen {
         };
 
         view.findViewById(R.id.start).setOnClickListener(v -> app().show(new SetupScreen()));
+        view.findViewById(R.id.restore).setOnClickListener(v -> openBackup.launch(ProfileSheet.BACKUP_TYPES));
+    }
+
+    private void onBackupPicked(@Nullable Uri document) {
+        if (document == null || !isAdded()) return;
+        BackupRepository backups = new BackupRepository(requireContext());
+        BackupImport.confirm(this, backups, document, R.string.splash_restore, R.string.backup_restore_message,
+                R.string.backup_restore_confirm, password -> restore(backups, document, password));
+    }
+
+    private void restore(BackupRepository backups, Uri document, @Nullable String password) {
+        backups.restoreProfile(document, password, new RepositoryCallback<Long>() {
+            @Override
+            public void onSuccess(Long userId) {
+                if (isAdded()) app().signedIn(userId);
+            }
+
+            @Override
+            public void onError(Exception e) {
+                if (isAdded()) Toast.makeText(requireContext(), e.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
     @Override

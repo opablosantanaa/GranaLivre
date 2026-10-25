@@ -392,4 +392,57 @@
     <string name="import_save_adjust_only">Criar só o ajuste de saldo</string>
     <string name="import_done">%1$d lançamentos importados</string>
     <string name="import_done_adjust">%1$d lançamentos importados e saldo ajustado em %2$s</string>
+
+    <string name="reminder_channel_name">Vencimentos</string>
+    <string name="reminder_channel_description">Avisos de contas e faturas perto do vencimento</string>
+    <string name="reminder_public_title">Você tem contas perto do vencimento</string>
+    <string name="reminder_invoice_title">Fatura %1$s</string>
+    <string name="reminder_bill_title">Conta a pagar</string>
+    <string name="reminder_due_in_two_days">%1$s · vence em 2 dias</string>
+    <string name="reminder_due_tomorrow">%1$s · vence amanhã</string>
+    <string name="reminder_due_today">%1$s · vence hoje</string>
+    <string name="reminder_overdue_yesterday">%1$s · venceu ontem</string>
+    <plurals name="reminder_summary">
+        <item quantity="one">%1$d conta perto do vencimento</item>
+        <item quantity="other">%1$d contas perto do vencimento</item>
+    </plurals>
+
+    <string name="splash_restore">Já tenho um backup</string>
+    <string name="profile_backup">Backup</string>
+    <string name="backup_automatic">Backups automáticos</string>
+    <string name="backup_automatic_off">Desativados. Toque para escolher uma pasta.</string>
+    <string name="backup_automatic_on">Todo dia na pasta %1$s</string>
+    <string name="backup_automatic_on_last">Todo dia na pasta %1$s · último em %2$s</string>
+    <string name="backup_automatic_enabled">Backups automáticos ativados</string>
+    <string name="backup_folder_unknown">escolhida</string>
+    <string name="backup_save">Salvar cópia</string>
+    <string name="backup_import_action">Importar</string>
+    <string name="backup_saved">Backup salvo</string>
+    <string name="backup_import">Importar backup</string>
+    <string name="backup_import_message">Backup de %1$s com %2$d registros, %3$d deles lançamentos.
+
+O que já existe neste aparelho continua como está; só entra o que falta.</string>
+    <string name="backup_import_confirm">Importar</string>
+    <string name="backup_imported">Backup importado: %1$d novos, %2$d atualizados, %3$d já existiam</string>
+    <string name="backup_restore_message">Backup de %1$s com %2$d registros, %3$d deles lançamentos. O perfil e os dados serão recriados neste aparelho.</string>
+    <string name="backup_restore_confirm">Restaurar</string>
+    <string name="backup_unknown_date">data desconhecida</string>
+    <string name="backup_date_time">%1$s às %2$s</string>
+    <string name="backup_password">Senha do backup</string>
+    <string name="backup_password_off">Sem senha: qualquer pessoa com o arquivo consegue lê-lo</string>
+    <string name="backup_password_on">Ativa: os backups são criptografados</string>
+    <string name="backup_password_create_message">Guarde bem esta senha. Sem ela, os backups protegidos não podem ser abertos, nem neste aparelho nem em outro.</string>
+    <string name="backup_password_hint">Senha</string>
+    <string name="backup_password_confirm_hint">Repita a senha</string>
+    <string name="backup_password_too_short">Use pelo menos %1$d caracteres</string>
+    <string name="backup_password_mismatch">As senhas não conferem</string>
+    <string name="backup_password_save">Salvar senha</string>
+    <string name="backup_password_saved">Senha do backup cadastrada</string>
+    <string name="backup_password_manage_message">Os backups são criptografados com sua senha. Uma senha nova vale para os próximos backups; os antigos continuam abrindo com a senha de quando foram feitos.</string>
+    <string name="backup_password_change">Trocar senha</string>
+    <string name="backup_password_remove">Remover senha</string>
+    <string name="backup_password_remove_message">Os próximos backups ficarão legíveis por qualquer pessoa que tiver o arquivo.</string>
+    <string name="backup_password_removed">Senha do backup removida</string>
+    <string name="backup_password_ask">Este backup é protegido. Digite a senha usada quando ele foi feito.</string>
+    <string name="backup_password_open">Abrir</string>
 </resources>

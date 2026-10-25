@@ -8,7 +8,7 @@
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
 .DS_Store
-/build
+build/
 /captures
 .externalNativeBuild
 .cxx
@@ -16,3 +16,42 @@ local.properties
 
 # Documentação local
 EXPLICACAO.md
+
+# Assinatura do app (nunca publicar)
+apkconfig/
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.key
+keystore.properties
+signing.properties
+
+# Segredos e credenciais
+.env
+.env.*
+secrets.properties
+google-services.json
+GoogleService-Info.plist
+
+# Release: o APK fica no repositório, o mapeamento de ofuscação não
+app/release/*
+!app/release/granalivre.apk
+!app/release/output-metadata.json
+mapping.txt
+
+# Configurações locais da IDE e do dispositivo
+/.idea/deploymentTargetSelector.xml
+/.idea/deviceManager.xml
+/.idea/shelf
+/.claude/settings.local.json
+
+# Dados locais do app (bancos e backups exportados)
+*.db
+*.db-shm
+*.db-wal
+granalivre-backup-*.json
+
+# Arquivos de design
+/design/

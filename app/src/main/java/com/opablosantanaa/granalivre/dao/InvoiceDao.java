@@ -35,6 +35,11 @@ public interface InvoiceDao {
     @Query("SELECT * FROM invoices WHERE card_id = :cardId AND invoice_reference_month = :month LIMIT 1")
     Invoice findByCardAndMonth(long cardId, YearMonth month);
 
+    @Query("SELECT i.* FROM invoices i JOIN cards c ON c.card_id = i.card_id "
+            + "WHERE c.user_id = :userId AND i.invoice_status != 'PAGA' "
+            + "AND i.invoice_due_date BETWEEN :start AND :end ORDER BY i.invoice_due_date")
+    List<Invoice> findUnpaidDueBetween(long userId, LocalDate start, LocalDate end);
+
     @Transaction
     @Query("SELECT * FROM invoices WHERE invoice_id = :invoiceId")
     LiveData<InvoiceWithTransactions> getWithTransactions(long invoiceId);

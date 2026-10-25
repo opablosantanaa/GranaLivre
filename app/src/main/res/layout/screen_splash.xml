@@ -105,6 +105,24 @@
         android:gravity="center"
         android:text="@string/splash_cta"
         android:textColor="#0E1416"
+        app:layout_constraintBottom_toTopOf="@id/restore"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/restore"
+        style="@style/Text.Body"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="8dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center"
+        android:text="@string/splash_restore"
+        android:textColor="@color/gl_on_silk_secondary"
         app:layout_constraintBottom_toTopOf="@id/privacy"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />

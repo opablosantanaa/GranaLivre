@@ -2,7 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Sem backup automático: os dados ficam só neste aparelho e uma instalação nova começa do cadastro -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:name=".GranaLivreApplication"
         android:allowBackup="false"
