@@ -197,7 +197,6 @@ app/
 
 design/                                  # Mascote e referências visuais das telas
 gradle/                                  # Wrapper e catálogo de dependências
-EXPLICACAO.md                            # Decisões detalhadas da camada de dados
 settings.gradle.kts                      # Configuração dos módulos
 ```
 
@@ -205,7 +204,7 @@ settings.gradle.kts                      # Configuração dos módulos
 
 ## 🧮 Regras Financeiras
 
-As decisões completas estão em [`EXPLICACAO.md`](EXPLICACAO.md). As principais:
+As principais decisões:
 
 - **Dinheiro em centavos**: todos os valores são `long` em centavos, evitando os erros de arredondamento de `double`.
 - **Valores sempre positivos**: o sentido vem do tipo do lançamento (`RECEITA` ou `DESPESA`).
