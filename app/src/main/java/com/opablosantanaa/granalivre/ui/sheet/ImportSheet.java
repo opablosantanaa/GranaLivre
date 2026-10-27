@@ -126,8 +126,11 @@ public class ImportSheet extends BaseSheet {
                 preview = result;
                 int fresh = 0;
                 for (Row row : preview.rows) if (!row.duplicate) fresh++;
-                ((TextView) header.findViewById(R.id.counts)).setText(
-                        getString(R.string.import_counts, fresh, preview.rows.size() - fresh));
+                int matched = preview.matchedCount();
+                ((TextView) header.findViewById(R.id.counts)).setText(matched == 0
+                        ? getString(R.string.import_counts, fresh, preview.rows.size() - fresh)
+                        : getString(R.string.import_counts_matched, fresh - matched,
+                                preview.rows.size() - fresh, matched));
                 adapter.notifyDataSetChanged();
                 renderReconcile();
             }
@@ -161,11 +164,19 @@ public class ImportSheet extends BaseSheet {
         check.setOnCheckedChangeListener((b, checked) -> {
             row.selected = checked;
             renderReconcile();
+            if (row.match != null) bindRow(item, row);
         });
 
         TextView category = item.findViewById(R.id.category);
         if (row.duplicate) {
             category.setText(R.string.import_duplicate);
+            category.setTextColor(color(R.color.gl_text_secondary));
+            category.setOnClickListener(null);
+            category.setClickable(false);
+            item.setAlpha(0.55f);
+        } else if (row.links()) {
+            category.setText(getString(R.string.import_matched, row.match.getTransaction_description()));
+            category.setContentDescription(category.getText());
             category.setTextColor(color(R.color.gl_text_secondary));
             category.setOnClickListener(null);
             category.setClickable(false);
@@ -234,12 +245,14 @@ public class ImportSheet extends BaseSheet {
         if (root == null) return;
         MaterialButton save = root.findViewById(R.id.save);
         int count = selectedCount();
+        int links = preview == null ? 0 : preview.linkCount();
         boolean adjust = ((MaterialSwitch) header.findViewById(R.id.adjust)).isChecked();
         if (count == 0 && adjust) save.setText(R.string.import_save_adjust_only);
+        else if (count == 0 && links > 0) save.setText(R.string.import_save_link_only);
         else if (count == 0) save.setText(R.string.import_nothing);
         else if (count == 1) save.setText(R.string.import_save_one);
         else save.setText(getString(R.string.import_save, count));
-        boolean enabled = preview != null && (count > 0 || adjust);
+        boolean enabled = preview != null && (count > 0 || links > 0 || adjust);
         save.setEnabled(enabled);
         save.setAlpha(enabled ? 1f : 0.45f);
     }
@@ -259,6 +272,7 @@ public class ImportSheet extends BaseSheet {
                         String message = result.adjustmentCents == 0
                                 ? getString(R.string.import_done, result.imported)
                                 : getString(R.string.import_done_adjust, result.imported, Money.plain(result.adjustmentCents));
+                        if (result.linked > 0) message = getString(R.string.import_done_linked, message, result.linked);
                         Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show();
                         dismiss();
                     }

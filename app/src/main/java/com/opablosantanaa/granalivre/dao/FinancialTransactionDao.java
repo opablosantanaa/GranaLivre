@@ -69,6 +69,11 @@ public interface FinancialTransactionDao {
             + "AND transaction_import_id IS NOT NULL")
     List<String> findImportIds(long accountId);
 
+    @Query("SELECT * FROM transactions WHERE account_id = :accountId AND card_id IS NULL "
+            + "AND transaction_import_id IS NULL AND transaction_date BETWEEN :start AND :end "
+            + "ORDER BY transaction_date, transaction_id")
+    List<FinancialTransaction> findUnlinkedBetween(long accountId, LocalDate start, LocalDate end);
+
     @Query("SELECT COALESCE(SUM(CASE WHEN transaction_type = 'RECEITA' THEN transaction_amount_cents "
             + "ELSE -transaction_amount_cents END), 0) FROM transactions "
             + "WHERE account_id = :accountId AND transaction_paid = 1 AND transaction_date > :date")

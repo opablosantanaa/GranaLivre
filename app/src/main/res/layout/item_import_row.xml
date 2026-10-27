@@ -50,6 +50,7 @@
                 android:layout_marginStart="10dp"
                 android:background="@drawable/bg_segment_track_sheet"
                 android:gravity="center"
+                android:ellipsize="end"
                 android:maxLines="1"
                 android:paddingStart="12dp"
                 android:paddingEnd="12dp"

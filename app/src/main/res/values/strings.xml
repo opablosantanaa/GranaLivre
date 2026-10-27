@@ -378,7 +378,11 @@
     <string name="import_card_warning">Este é um extrato de cartão de crédito. Os valores entram como receitas e despesas da conta escolhida.</string>
     <string name="import_target">Importar para</string>
     <string name="import_counts">%1$d novos, %2$d já importados</string>
+    <string name="import_counts_matched">%1$d novos, %2$d já importados, %3$d já lançados no app</string>
     <string name="import_duplicate">Já importado</string>
+    <string name="import_matched">Já lançado: %1$s</string>
+    <string name="import_save_link_only">Vincular aos lançamentos existentes</string>
+    <string name="import_done_linked">%1$s, %2$d vinculados a lançamentos existentes</string>
     <string name="import_choose_category">Escolher categoria de %1$s</string>
     <string name="import_reconcile_title">Conciliação de saldo</string>
     <string name="import_ledger">Saldo no extrato em %1$s: %2$s</string>
