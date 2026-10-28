@@ -103,7 +103,20 @@
                 android:layout_marginTop="16dp"
                 android:text="@string/category_filter" />
 
+            <TextView
+                android:id="@+id/category_hint"
+                style="@style/Text.Caption"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:minHeight="40dp"
+                android:gravity="center_vertical"
+                android:accessibilityLiveRegion="polite"
+                android:textColor="@color/gl_text_secondary"
+                android:visibility="gone" />
+
             <HorizontalScrollView
+                android:id="@+id/category_scroll"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:clipToPadding="false"

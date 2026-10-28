@@ -24,4 +24,10 @@ public interface BudgetDao {
 
     @Query("SELECT * FROM budgets WHERE user_id = :userId AND budget_month = :month")
     LiveData<List<Budget>> getByUserAndMonth(long userId, YearMonth month);
+
+    @Query("SELECT * FROM budgets WHERE user_id = :userId AND budget_month = :month")
+    List<Budget> findByUserAndMonth(long userId, YearMonth month);
+
+    @Query("SELECT * FROM budgets WHERE budget_id = :budgetId")
+    Budget findById(long budgetId);
 }

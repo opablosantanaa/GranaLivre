@@ -14,6 +14,53 @@
 
         <include layout="@layout/include_sheet_header" />
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/prev"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="-12dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/moves_prev"
+                android:src="@drawable/ic_chevron_left"
+                app:tint="@color/gl_text" />
+
+            <TextView
+                android:id="@+id/month"
+                style="@style/Text.Headline"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:accessibilityLiveRegion="polite"
+                android:gravity="center" />
+
+            <ImageButton
+                android:id="@+id/next"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginEnd="-12dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/moves_next"
+                android:src="@drawable/ic_chevron_right"
+                app:tint="@color/gl_text" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/month_limits"
+            style="@style/Text.Caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:accessibilityLiveRegion="polite"
+            android:gravity="center"
+            android:textColor="@color/gl_text_secondary" />
+
         <TextView
             style="@style/SheetLabel"
             android:text="@string/entry_category" />
@@ -55,5 +102,16 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
             android:text="@string/budget_save" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/delete"
+            style="@style/Button.GranaLivre.Text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="8dp"
+            android:text="@string/budget_delete"
+            android:textColor="@color/gl_expense"
+            android:visibility="gone" />
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

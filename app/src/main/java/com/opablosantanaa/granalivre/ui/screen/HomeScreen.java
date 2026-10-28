@@ -167,8 +167,12 @@ public class HomeScreen extends Screen {
         vm.recurrenceList.observe(getViewLifecycleOwner(), v -> {
             later("refreshTiles", () -> refreshTiles(view));
             later("refreshWarning", () -> refreshWarning(view));
+            later("refreshAdvisor", () -> refreshAdvisor(view));
         });
-        vm.pendingList.observe(getViewLifecycleOwner(), v -> later("refreshWarning", () -> refreshWarning(view)));
+        vm.pendingList.observe(getViewLifecycleOwner(), v -> {
+            later("refreshWarning", () -> refreshWarning(view));
+            later("refreshAdvisor", () -> refreshAdvisor(view));
+        });
         vm.categoryList.observe(getViewLifecycleOwner(), v -> {
             later("refreshList", () -> refreshList(view));
             later("refreshAdvisor", () -> refreshAdvisor(view));
@@ -386,7 +390,7 @@ view.findViewById(R.id.identity).setContentDescription(full + ", " + Dates.today
     private void refreshAdvisor(View view) {
         MainViewModel vm = vm();
         tips = FinanceAdvisor.tips(vm.history.getValue(), vm.categoryList.getValue(), vm.budgetList.getValue(),
-                LocalDate.now());
+                vm.recurrenceList.getValue(), vm.pendingList.getValue(), LocalDate.now());
         if (tipIndex >= tips.size()) tipIndex = 0;
         FinanceAdvisor.Mood top = tips.get(0).mood;
         ((CoinView) view.findViewById(R.id.advisor)).setMood(top, top == FinanceAdvisor.Mood.ALERT);

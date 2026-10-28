@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 import com.opablosantanaa.granalivre.entity.Budget;
 import com.opablosantanaa.granalivre.entity.Category;
 import com.opablosantanaa.granalivre.entity.FinancialTransaction;
+import com.opablosantanaa.granalivre.entity.Recurrence;
 import com.opablosantanaa.granalivre.entity.TransactionType;
 
 import org.junit.Test;
@@ -24,6 +25,8 @@ public class FinanceAdvisorTest {
 
     private final List<FinancialTransaction> history = new ArrayList<>();
     private final List<Category> categories = new ArrayList<>();
+    private final List<Recurrence> recurrences = new ArrayList<>();
+    private final List<FinancialTransaction> pending = new ArrayList<>();
 
     public FinanceAdvisorTest() {
         categories.add(category(FOOD, "Alimentação"));
@@ -50,7 +53,7 @@ public class FinanceAdvisorTest {
     }
 
     private List<FinanceAdvisor.Tip> tips() {
-        return FinanceAdvisor.tips(history, categories, Collections.emptyList(), TODAY);
+        return FinanceAdvisor.tips(history, categories, Collections.emptyList(), recurrences, pending, TODAY);
     }
 
     private static boolean has(List<FinanceAdvisor.Tip> tips, FinanceAdvisor.Mood mood, String fragment) {
@@ -100,7 +103,7 @@ public class FinanceAdvisorTest {
         add(TransactionType.RECEITA, 500_000, null, early.withDayOfMonth(5));
         add(TransactionType.RECEITA, 500_000, null, LocalDate.of(2026, 9, 5));
         add(TransactionType.DESPESA, 450_000, FOOD, LocalDate.of(2026, 9, 10));
-        List<FinanceAdvisor.Tip> tips = FinanceAdvisor.tips(history, categories, null, early);
+        List<FinanceAdvisor.Tip> tips = FinanceAdvisor.tips(history, categories, null, null, null, early);
         assertFalse(has(tips, FinanceAdvisor.Mood.PRAISE, "guardou"));
         assertTrue(has(tips, FinanceAdvisor.Mood.INFO, "Em setembro sobraram"));
     }
@@ -128,16 +131,58 @@ public class FinanceAdvisorTest {
         budget.setCategory_id(FOOD);
         budget.setBudget_limit_cents(50_000);
         List<FinanceAdvisor.Tip> tips = FinanceAdvisor.tips(history, categories,
-                Collections.singletonList(budget), TODAY);
+                Collections.singletonList(budget), null, null, TODAY);
         assertTrue(has(tips, FinanceAdvisor.Mood.ALERT, "orçamento de Alimentação em R$ 200,00"));
+    }
+
+    private Recurrence recurrence(long id, TransactionType type) {
+        Recurrence r = new Recurrence();
+        r.setRecurrence_id(id);
+        r.setRecurrence_type(type);
+        r.setRecurrence_start_date(TODAY.minusDays(2));
+        r.setRecurrence_last_generated_date(TODAY.minusDays(2));
+        recurrences.add(r);
+        return r;
+    }
+
+    private FinancialTransaction occurrence(long recurrenceId, TransactionType type, boolean paid) {
+        FinancialTransaction t = add(type, 10_000, HOME, TODAY.minusDays(2));
+        t.setRecurrence_id(recurrenceId);
+        t.setTransaction_paid(paid);
+        if (!paid) pending.add(t);
+        return t;
     }
 
     @Test
     public void overdueRecurrenceIsAlert() {
-        FinancialTransaction t = add(TransactionType.DESPESA, 10_000, HOME, TODAY.minusDays(2));
-        t.setTransaction_paid(false);
-        t.setRecurrence_id(4L);
-        assertTrue(has(tips(), FinanceAdvisor.Mood.ALERT, "atrasada"));
+        recurrence(4L, TransactionType.DESPESA);
+        occurrence(4L, TransactionType.DESPESA, false);
+        assertTrue(has(tips(), FinanceAdvisor.Mood.ALERT, "conta recorrente atrasada"));
+    }
+
+    @Test
+    public void paidRecurrenceIsNotOverdue() {
+        recurrence(4L, TransactionType.DESPESA);
+        occurrence(4L, TransactionType.DESPESA, true);
+        assertFalse(has(tips(), FinanceAdvisor.Mood.ALERT, "atrasada"));
+    }
+
+    @Test
+    public void overdueIncomeIsNotCalledABill() {
+        recurrence(4L, TransactionType.DESPESA);
+        occurrence(4L, TransactionType.DESPESA, true);
+        recurrence(5L, TransactionType.RECEITA);
+        occurrence(5L, TransactionType.RECEITA, false);
+        List<FinanceAdvisor.Tip> tips = tips();
+        assertFalse(has(tips, FinanceAdvisor.Mood.ALERT, "conta recorrente atrasada"));
+        assertTrue(has(tips, FinanceAdvisor.Mood.WARN, "recebimento recorrente atrasado"));
+    }
+
+    @Test
+    public void pausedRecurrenceIsNotOverdue() {
+        recurrence(4L, TransactionType.DESPESA).setRecurrence_active(false);
+        occurrence(4L, TransactionType.DESPESA, false);
+        assertFalse(has(tips(), FinanceAdvisor.Mood.ALERT, "atrasada"));
     }
 
     @Test

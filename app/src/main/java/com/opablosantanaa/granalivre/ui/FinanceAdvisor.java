@@ -3,6 +3,7 @@ package com.opablosantanaa.granalivre.ui;
 import com.opablosantanaa.granalivre.entity.Budget;
 import com.opablosantanaa.granalivre.entity.Category;
 import com.opablosantanaa.granalivre.entity.FinancialTransaction;
+import com.opablosantanaa.granalivre.entity.Recurrence;
 import com.opablosantanaa.granalivre.entity.TransactionType;
 
 import java.time.LocalDate;
@@ -46,23 +47,33 @@ public final class FinanceAdvisor {
     private FinanceAdvisor() {}
 
     public static List<Tip> tips(List<FinancialTransaction> history, List<Category> categories,
-                                 List<Budget> budgets, LocalDate today) {
+                                 List<Budget> budgets, List<Recurrence> recurrences,
+                                 List<FinancialTransaction> pending, LocalDate today) {
         List<Tip> alerts = new ArrayList<>();
         List<Tip> warnings = new ArrayList<>();
         List<Tip> praises = new ArrayList<>();
         if (history == null) history = new ArrayList<>();
         YearMonth month = YearMonth.from(today);
 
-        int overdue = 0;
-        for (FinancialTransaction t : history) {
-            if (!t.isTransaction_paid() && t.getRecurrence_id() != null && t.getTransaction_date().isBefore(today)) {
-                overdue++;
+        int overdueBills = 0;
+        int overdueIncome = 0;
+        if (recurrences != null) {
+            for (Recurrence r : recurrences) {
+                if (RecurrenceStatus.of(r, pending, history, today).kind != RecurrenceStatus.Kind.OVERDUE) continue;
+                if (r.getRecurrence_type() == TransactionType.RECEITA) overdueIncome++;
+                else overdueBills++;
             }
         }
-        if (overdue > 0) {
-            alerts.add(new Tip(Mood.ALERT, overdue == 1
+        if (overdueBills > 0) {
+            alerts.add(new Tip(Mood.ALERT, overdueBills == 1
                     ? "Tem uma conta recorrente atrasada. Quite ou registre um pagamento parcial na aba Recorrentes."
-                    : "Tem " + overdue + " contas recorrentes atrasadas. Quite ou registre pagamentos parciais "
+                    : "Tem " + overdueBills + " contas recorrentes atrasadas. Quite ou registre pagamentos parciais "
+                    + "na aba Recorrentes."));
+        }
+        if (overdueIncome > 0) {
+            warnings.add(new Tip(Mood.WARN, overdueIncome == 1
+                    ? "Tem um recebimento recorrente atrasado. Registre quando ele entrar, na aba Recorrentes."
+                    : "Tem " + overdueIncome + " recebimentos recorrentes atrasados. Registre quando entrarem, "
                     + "na aba Recorrentes."));
         }
 

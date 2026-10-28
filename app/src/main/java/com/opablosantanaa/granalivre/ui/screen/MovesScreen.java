@@ -12,12 +12,12 @@ import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.chip.ChipGroup;
 import com.opablosantanaa.granalivre.App;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.opablosantanaa.granalivre.R;
 import com.opablosantanaa.granalivre.repository.RepositoryCallback;
 import com.opablosantanaa.granalivre.entity.FinancialTransaction;
+import com.opablosantanaa.granalivre.entity.Category;
 import com.opablosantanaa.granalivre.entity.TransactionType;
 import com.opablosantanaa.granalivre.entity.Transfer;
 import com.opablosantanaa.granalivre.ui.Dates;
@@ -30,7 +30,9 @@ import com.opablosantanaa.granalivre.ui.widget.SegmentedControl;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MovesScreen extends Screen {
     private static final int ALL = 0;
@@ -61,6 +63,8 @@ public class MovesScreen extends Screen {
                 color(R.color.gl_text), color(R.color.gl_bg));
         segmented.setOnChange(index -> {
             filter = index;
+            categoryFilter = 0;
+            refreshCategories(view);
             renderLater(view);
         });
 
@@ -77,12 +81,8 @@ public class MovesScreen extends Screen {
                 ((TextView) view.findViewById(R.id.month)).setText(Dates.monthYear(month)));
         vm.monthTransactions.observe(getViewLifecycleOwner(), v -> renderLater(view));
         vm.monthTransfers.observe(getViewLifecycleOwner(), v -> renderLater(view));
-        ChipGroup categoryChips = view.findViewById(R.id.category_filter);
         vm.categoryList.observe(getViewLifecycleOwner(), categories -> {
-            CategoryFilters.populate(requireContext(), categoryChips, categories, categoryFilter, id -> {
-                categoryFilter = id;
-                renderLater(view);
-            });
+            refreshCategories(view);
             renderLater(view);
         });
         vm.accountList.observe(getViewLifecycleOwner(), v -> renderLater(view));
@@ -107,6 +107,25 @@ public class MovesScreen extends Screen {
         }
     }
 
+    private void refreshCategories(View view) {
+        TextView hint = view.findViewById(R.id.category_hint);
+        View scroll = view.findViewById(R.id.category_scroll);
+        if (filter != IN && filter != OUT) {
+            hint.setText(filter == TRANSFERS ? R.string.category_filter_transfers : R.string.category_filter_pick_type);
+            hint.setVisibility(View.VISIBLE);
+            scroll.setVisibility(View.GONE);
+            return;
+        }
+        hint.setVisibility(View.GONE);
+        scroll.setVisibility(View.VISIBLE);
+        TransactionType type = filter == IN ? TransactionType.RECEITA : TransactionType.DESPESA;
+        CategoryFilters.populate(requireContext(), view.findViewById(R.id.category_filter), vm().categoryList.getValue(),
+                type, categoryFilter, id -> {
+                    categoryFilter = id;
+                    renderLater(view);
+                });
+    }
+
     private void renderLater(View view) {
         later("render", () -> render(view));
     }
@@ -129,13 +148,18 @@ public class MovesScreen extends Screen {
         ((TextView) view.findViewById(R.id.total_out)).setText(Money.styled(-out, muted));
         ((TextView) view.findViewById(R.id.total_result)).setText(Money.styled(in - out, muted, true));
 
+        Map<Long, Long> parents = new HashMap<>();
+        List<Category> categories = vm.categoryList.getValue();
+        if (categories != null) {
+            for (Category c : categories) parents.put(c.getCategory_id(), c.getCategory_parent_id());
+        }
         List<Entry> entries = new ArrayList<>();
         if (filter != TRANSFERS) {
             for (FinancialTransaction t : transactions) {
                 boolean income = t.getTransaction_type() == TransactionType.RECEITA;
                 if (filter == IN && !income) continue;
                 if (filter == OUT && income) continue;
-                if (categoryFilter != 0 && (income || !matchesCategory(t.getCategory_id(), categoryFilter))) continue;
+                if (categoryFilter != 0 && !matchesCategory(t.getCategory_id(), categoryFilter, parents)) continue;
                 entries.add(new Entry(t));
             }
         }
@@ -191,8 +215,11 @@ public class MovesScreen extends Screen {
                 .show();
     }
 
-    private static boolean matchesCategory(Long transactionCategory, long selectedCategory) {
-        return transactionCategory != null && transactionCategory == selectedCategory;
+    private static boolean matchesCategory(Long transactionCategory, long selectedCategory, Map<Long, Long> parents) {
+        if (transactionCategory == null) return false;
+        if (transactionCategory == selectedCategory) return true;
+        Long parent = parents.get(transactionCategory);
+        return parent != null && parent == selectedCategory;
     }
 
     private static final class RowItem {

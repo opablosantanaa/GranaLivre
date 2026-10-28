@@ -183,6 +183,27 @@ public class StatementImportTest extends DatabaseTest {
     }
 
     @Test
+    public void earlyPaymentSettlesUpcomingOccurrenceSoItIsNeverOverdue() throws OfxException {
+        long accountId = createAccount(userId, 100_000);
+        long recurrenceId = aesaRecurrence(accountId);
+        OfxStatement early = OfxParser.parse(("<OFX><STMTTRN><TRNTYPE>DEBIT<DTPOSTED>20261024<TRNAMT>-278.71"
+                + "<FITID>C1<MEMO>PAG BOLETO AUTARQUIA</STMTTRN></OFX>").getBytes(StandardCharsets.UTF_8));
+
+        StatementImportRepository.Preview preview = success(cb -> repository.preview(userId, accountId, early, cb));
+        assertEquals(0, preview.rows.get(0).match.getTransaction_id());
+        assertEquals(Long.valueOf(recurrenceId), preview.rows.get(0).match.getRecurrence_id());
+        StatementImportRepository.Result result = success(cb -> repository.commit(userId, accountId, preview.rows,
+                null, null, false, cb));
+        assertEquals(1, result.linked);
+        assertEquals(100_000 - 27_871, database.accountDao().findBalance(accountId));
+
+        Recurrence stored = database.recurrenceDao().findById(recurrenceId);
+        assertEquals(LocalDate.of(2026, 10, 27), stored.getRecurrence_last_generated_date());
+        assertEquals(0, new RecurrenceGenerator(database).generate(stored, LocalDate.of(2026, 10, 30)));
+        assertNull(database.financialTransactionDao().findOldestPendingByRecurrence(recurrenceId));
+    }
+
+    @Test
     public void eachExistingEntryMatchesOneLineAndCanBeOverridden() throws OfxException {
         long accountId = createAccount(userId, 100_000);
         long snack = expense(accountId, null, 1_000, LocalDate.of(2026, 10, 26), true);

@@ -24,6 +24,7 @@ import com.opablosantanaa.granalivre.ui.Money;
 import com.opablosantanaa.granalivre.ui.sheet.BudgetSheet;
 import com.opablosantanaa.granalivre.ui.sheet.GoalSheet;
 import com.opablosantanaa.granalivre.ui.sheet.InvoiceSheet;
+import com.opablosantanaa.granalivre.ui.sheet.SalarySheet;
 import com.opablosantanaa.granalivre.ui.widget.BarView;
 
 import java.time.YearMonth;
@@ -136,6 +137,10 @@ public class GoalsScreen extends Screen {
         ((TextView) view.findViewById(R.id.saved)).setText(
                 Money.styled(savedTotal, color(R.color.gl_on_silk_secondary)));
 
+        section(sheet, getString(R.string.salary_section), getString(R.string.salary_open),
+                v -> SalarySheet.create().show(getChildFragmentManager(), "salary"));
+        empty(sheet, R.string.salary_hint);
+
         YearMonth month = YearMonth.now();
         section(sheet, getString(R.string.budgets_section, Dates.month(month)),
                 getString(R.string.budgets_define),
@@ -171,7 +176,8 @@ public class GoalsScreen extends Screen {
                         getString(R.string.goals_progress, Money.whole(spent), Money.whole(limit)),
                         note, spent <= limit ? secondary : color(R.color.gl_expense));
                 row.setOnClickListener(v ->
-                        BudgetSheet.create(budget.getCategory_id()).show(getChildFragmentManager(), "budget"));
+                        BudgetSheet.create(budget.getCategory_id(), budget.getBudget_month())
+                                .show(getChildFragmentManager(), "budget"));
             }
         }
 

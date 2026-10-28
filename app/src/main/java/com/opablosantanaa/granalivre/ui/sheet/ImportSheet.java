@@ -175,7 +175,8 @@ public class ImportSheet extends BaseSheet {
             category.setClickable(false);
             item.setAlpha(0.55f);
         } else if (row.links()) {
-            category.setText(getString(R.string.import_matched, row.match.getTransaction_description()));
+            category.setText(getString(row.match.getTransaction_id() == 0 ? R.string.import_matched_upcoming
+                    : R.string.import_matched, row.match.getTransaction_description()));
             category.setContentDescription(category.getText());
             category.setTextColor(color(R.color.gl_text_secondary));
             category.setOnClickListener(null);

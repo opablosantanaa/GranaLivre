@@ -13,6 +13,7 @@ import com.opablosantanaa.granalivre.entity.TransactionType;
 
 import java.time.YearMonth;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executor;
 
 public class BudgetRepository extends BaseRepository {
@@ -36,21 +37,47 @@ public class BudgetRepository extends BaseRepository {
     }
 
     public void save(Budget budget, RepositoryCallback<Long> callback) {
+        execute(() -> database.runInTransaction(() -> store(budget)), callback);
+    }
+
+    public void saveAll(long userId, YearMonth month, Map<Long, Long> limits, RepositoryCallback<Integer> callback) {
         execute(() -> database.runInTransaction(() -> {
-            require(budget.getBudget_limit_cents() > 0, "O limite deve ser maior que zero");
-            rules.validateCategory(budget.getUser_id(), budget.getCategory_id(), TransactionType.DESPESA);
-            Budget existing = budgetDao.findByCategoryAndMonth(budget.getCategory_id(), budget.getBudget_month());
-            if (existing != null) {
-                budget.setBudget_id(existing.getBudget_id());
+            int saved = 0;
+            for (Map.Entry<Long, Long> entry : limits.entrySet()) {
+                if (entry.getKey() == null || entry.getValue() == null || entry.getValue() <= 0) continue;
+                Budget budget = new Budget();
+                budget.setUser_id(userId);
+                budget.setCategory_id(entry.getKey());
+                budget.setBudget_month(month);
+                budget.setBudget_limit_cents(entry.getValue());
+                store(budget);
+                saved++;
             }
-            long rowId = budgetDao.upsert(budget);
-            return rowId == UPDATED_ROW ? budget.getBudget_id() : rowId;
+            require(saved > 0, "Nenhum limite para salvar");
+            return saved;
         }), callback);
+    }
+
+    private long store(Budget budget) {
+        require(budget.getBudget_limit_cents() > 0, "O limite deve ser maior que zero");
+        rules.validateCategory(budget.getUser_id(), budget.getCategory_id(), TransactionType.DESPESA);
+        Budget existing = budgetDao.findByCategoryAndMonth(budget.getCategory_id(), budget.getBudget_month());
+        if (existing != null) {
+            budget.setBudget_id(existing.getBudget_id());
+        }
+        long rowId = budgetDao.upsert(budget);
+        return rowId == UPDATED_ROW ? budget.getBudget_id() : rowId;
+    }
+
+    public void findByMonth(long userId, YearMonth month, RepositoryCallback<List<Budget>> callback) {
+        execute(() -> budgetDao.findByUserAndMonth(userId, month), callback);
     }
 
     public void delete(Budget budget, RepositoryCallback<Void> callback) {
         execute(() -> {
-            budgetDao.delete(budget);
+            Budget stored = budgetDao.findById(budget.getBudget_id());
+            require(stored != null && stored.getUser_id() == budget.getUser_id(), "Limite não encontrado");
+            budgetDao.delete(stored);
             return null;
         }, callback);
     }

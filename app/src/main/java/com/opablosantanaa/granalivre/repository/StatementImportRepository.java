@@ -6,11 +6,13 @@ import android.content.Context;
 
 import com.opablosantanaa.granalivre.database.AppDatabase;
 import com.opablosantanaa.granalivre.domain.DefaultCategories;
+import com.opablosantanaa.granalivre.domain.SalaryPlanner;
 import com.opablosantanaa.granalivre.domain.ofx.CategorySuggester;
 import com.opablosantanaa.granalivre.domain.ofx.OfxStatement;
 import com.opablosantanaa.granalivre.domain.ofx.OfxTransaction;
 import com.opablosantanaa.granalivre.entity.Category;
 import com.opablosantanaa.granalivre.entity.FinancialTransaction;
+import com.opablosantanaa.granalivre.entity.Recurrence;
 import com.opablosantanaa.granalivre.entity.TransactionType;
 
 import java.time.LocalDate;
@@ -162,8 +164,21 @@ public class StatementImportRepository extends BaseRepository {
             if (last == null || row.source.date.isAfter(last)) last = row.source.date;
         }
         if (first == null) return;
-        List<FinancialTransaction> candidates = database.financialTransactionDao().findUnlinkedBetween(
-                accountId, first.minusDays(MATCH_WINDOW_DAYS), last.plusDays(MATCH_WINDOW_DAYS));
+        LocalDate start = first.minusDays(MATCH_WINDOW_DAYS);
+        LocalDate end = last.plusDays(MATCH_WINDOW_DAYS);
+        List<FinancialTransaction> candidates = new ArrayList<>(
+                database.financialTransactionDao().findUnlinkedBetween(accountId, start, end));
+        Set<Long> open = new HashSet<>();
+        for (FinancialTransaction t : candidates) {
+            if (!t.isTransaction_paid() && t.getRecurrence_id() != null) open.add(t.getRecurrence_id());
+        }
+        for (Recurrence recurrence : database.recurrenceDao().getAllActive()) {
+            if (recurrence.getAccount_id() == null || recurrence.getAccount_id() != accountId) continue;
+            if (open.contains(recurrence.getRecurrence_id())) continue;
+            LocalDate next = RecurrenceRepository.nextUnsettled(recurrence);
+            if (next == null || next.isBefore(start) || next.isAfter(end)) continue;
+            candidates.add(RecurrenceGenerator.buildTransaction(recurrence, next));
+        }
         List<long[]> pairs = new ArrayList<>();
         for (int r = 0; r < rows.size(); r++) {
             Row row = rows.get(r);
@@ -189,6 +204,18 @@ public class StatementImportRepository extends BaseRepository {
         }
     }
 
+    private FinancialTransaction openOccurrence(FinancialTransaction upcoming, long accountId) {
+        Long recurrenceId = upcoming.getRecurrence_id();
+        Recurrence stored = recurrenceId == null ? null : database.recurrenceDao().findById(recurrenceId);
+        if (stored == null || !stored.isRecurrence_active()
+                || stored.getAccount_id() == null || stored.getAccount_id() != accountId) return null;
+        LocalDate next = RecurrenceRepository.nextUnsettled(stored);
+        if (next == null || !next.equals(upcoming.getTransaction_date())) return null;
+        stored.setRecurrence_last_generated_date(next);
+        database.recurrenceDao().update(stored);
+        return RecurrenceGenerator.buildTransaction(stored, next);
+    }
+
     public void commit(long userId, long accountId, List<Row> rows, Long ledgerCents, LocalDate ledgerDate,
                        boolean reconcile, RepositoryCallback<Result> callback) {
         execute(() -> database.runInTransaction(() -> {
@@ -201,9 +228,11 @@ public class StatementImportRepository extends BaseRepository {
             List<String> linkedIds = new ArrayList<>();
             for (Row row : rows) {
                 if (row.links()) {
-                    FinancialTransaction t = database.financialTransactionDao().findById(row.match.getTransaction_id());
-                    if (existing.contains(row.source.importId) || t == null
-                            || t.getAccount_id() == null || t.getAccount_id() != accountId
+                    boolean upcoming = row.match.getTransaction_id() == 0;
+                    FinancialTransaction t = existing.contains(row.source.importId) ? null
+                            : upcoming ? openOccurrence(row.match, accountId)
+                            : database.financialTransactionDao().findById(row.match.getTransaction_id());
+                    if (t == null || t.getAccount_id() == null || t.getAccount_id() != accountId
                             || t.getTransaction_import_id() != null) {
                         skipped++;
                         continue;
@@ -214,7 +243,8 @@ public class StatementImportRepository extends BaseRepository {
                         t.setTransaction_date(row.source.date);
                     }
                     rules.prepare(t);
-                    database.financialTransactionDao().update(t);
+                    if (upcoming) database.financialTransactionDao().insert(t);
+                    else database.financialTransactionDao().update(t);
                     existing.add(row.source.importId);
                     linkedIds.add(row.source.importId);
                     linked++;
@@ -244,7 +274,7 @@ public class StatementImportRepository extends BaseRepository {
             if (reconcile && ledgerCents != null) {
                 LocalDate date = ledgerDate == null ? LocalDate.now() : ledgerDate;
                 adjustment = balanceBeforeImport - database.accountDao().findBalance(accountId);
-                StringBuilder adjustmentKey = new StringBuilder("adjust:").append(date).append(':')
+                StringBuilder adjustmentKey = new StringBuilder(SalaryPlanner.ADJUSTMENT_PREFIX).append(date).append(':')
                         .append(ledgerCents);
                 for (Row row : rows) {
                     if (row.selected && !row.duplicate) adjustmentKey.append(':').append(row.source.importId);

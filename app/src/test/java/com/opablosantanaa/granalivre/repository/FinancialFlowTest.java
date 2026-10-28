@@ -3,6 +3,8 @@ package com.opablosantanaa.granalivre.repository;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import com.opablosantanaa.granalivre.entity.Budget;
 import com.opablosantanaa.granalivre.entity.FinancialTransaction;
@@ -19,6 +21,9 @@ import org.junit.Test;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class FinancialFlowTest extends DatabaseTest {
     private long userId;
@@ -236,5 +241,66 @@ public class FinancialFlowTest extends DatabaseTest {
         Budget stored = database.budgetDao().findByCategoryAndMonth(expenseCategoryId, YearMonth.of(2026, 10));
         assertEquals(80_000, stored.getBudget_limit_cents());
         assertEquals(1, database.query("SELECT * FROM budgets", null).getCount());
+    }
+
+    private Budget budget(long ownerId, YearMonth month, long cents) {
+        Budget budget = new Budget();
+        budget.setUser_id(ownerId);
+        budget.setCategory_id(expenseCategoryId);
+        budget.setBudget_month(month);
+        budget.setBudget_limit_cents(cents);
+        return budget;
+    }
+
+    @Test
+    public void budgetsAreKeptPerMonthAndListedByMonth() {
+        BudgetRepository repository = new BudgetRepository(database, DIRECT, DIRECT);
+        success((RepositoryCallback<Long> callback) -> repository.save(budget(userId, YearMonth.of(2026, 10), 50_000), callback));
+        success((RepositoryCallback<Long> callback) -> repository.save(budget(userId, YearMonth.of(2026, 12), 70_000), callback));
+
+        List<Budget> december = success(callback -> repository.findByMonth(userId, YearMonth.of(2026, 12), callback));
+        assertEquals(1, december.size());
+        assertEquals(70_000, december.get(0).getBudget_limit_cents());
+        List<Budget> november = success(callback -> repository.findByMonth(userId, YearMonth.of(2026, 11), callback));
+        assertTrue(november.isEmpty());
+        assertEquals(50_000, database.budgetDao()
+                .findByCategoryAndMonth(expenseCategoryId, YearMonth.of(2026, 10)).getBudget_limit_cents());
+    }
+
+    @Test
+    public void savingAllLimitsForMonthCreatesOrReplacesAndSkipsUncategorized() {
+        BudgetRepository repository = new BudgetRepository(database, DIRECT, DIRECT);
+        YearMonth november = YearMonth.of(2026, 11);
+        success((RepositoryCallback<Long> callback) -> repository.save(budget(userId, november, 10_000), callback));
+        long otherCategory = createCategory(userId, TransactionType.DESPESA);
+        Map<Long, Long> limits = new HashMap<>();
+        limits.put(expenseCategoryId, 25_000L);
+        limits.put(otherCategory, 5_000L);
+        limits.put(null, 9_000L);
+
+        int saved = success(callback -> repository.saveAll(userId, november, limits, callback));
+        assertEquals(2, saved);
+        assertEquals(25_000, database.budgetDao().findByCategoryAndMonth(expenseCategoryId, november).getBudget_limit_cents());
+        assertEquals(5_000, database.budgetDao().findByCategoryAndMonth(otherCategory, november).getBudget_limit_cents());
+        assertEquals(2, database.query("SELECT * FROM budgets", null).getCount());
+    }
+
+    @Test
+    public void deletingBudgetRemovesOnlyThatMonthAndChecksOwner() {
+        BudgetRepository repository = new BudgetRepository(database, DIRECT, DIRECT);
+        long octoberId = success((RepositoryCallback<Long> callback) ->
+                repository.save(budget(userId, YearMonth.of(2026, 10), 50_000), callback));
+        success((RepositoryCallback<Long> callback) -> repository.save(budget(userId, YearMonth.of(2026, 11), 60_000), callback));
+        Budget october = database.budgetDao().findById(octoberId);
+
+        Budget foreign = database.budgetDao().findById(octoberId);
+        foreign.setUser_id(createUser("outro@email.com"));
+        DatabaseTest.<Void>failure(callback -> repository.delete(foreign, callback));
+        assertEquals(2, database.query("SELECT * FROM budgets", null).getCount());
+
+        success((RepositoryCallback<Void> callback) -> repository.delete(october, callback));
+        assertNull(database.budgetDao().findById(octoberId));
+        assertEquals(60_000, database.budgetDao()
+                .findByCategoryAndMonth(expenseCategoryId, YearMonth.of(2026, 11)).getBudget_limit_cents());
     }
 }
