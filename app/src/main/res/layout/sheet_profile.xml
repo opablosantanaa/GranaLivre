@@ -148,5 +148,27 @@
             android:visibility="gone"
             app:cornerRadius="26dp"
             app:strokeColor="@color/gl_line" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/privacy"
+                style="@style/Button.GranaLivre.Text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/legal_privacy" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/terms"
+                style="@style/Button.GranaLivre.Text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/legal_terms" />
+        </LinearLayout>
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

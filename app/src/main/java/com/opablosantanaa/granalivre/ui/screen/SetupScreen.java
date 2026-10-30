@@ -19,6 +19,7 @@ import com.opablosantanaa.granalivre.R;
 import com.opablosantanaa.granalivre.repository.RepositoryCallback;
 import com.opablosantanaa.granalivre.ui.Dates;
 import com.opablosantanaa.granalivre.ui.FinanceAdvisor;
+import com.opablosantanaa.granalivre.ui.sheet.LegalSheet;
 import com.opablosantanaa.granalivre.ui.widget.CoinView;
 import com.opablosantanaa.granalivre.ui.widget.PlayfulDecor;
 
@@ -103,6 +104,10 @@ public class SetupScreen extends Screen {
         name.setOnClickListener(v -> revealOnKeyboard(scroll, view.findViewById(R.id.sheet)));
         TextInputEditText birthField = view.findViewById(R.id.birth);
         TextView error = view.findViewById(R.id.error);
+        view.findViewById(R.id.terms).setOnClickListener(v ->
+                LegalSheet.create(LegalSheet.TERMS).show(getChildFragmentManager(), "legal"));
+        view.findViewById(R.id.privacy).setOnClickListener(v ->
+                LegalSheet.create(LegalSheet.PRIVACY).show(getChildFragmentManager(), "legal"));
         MaterialButton submit = view.findViewById(R.id.submit);
 
         View.OnClickListener pickBirth = v -> {

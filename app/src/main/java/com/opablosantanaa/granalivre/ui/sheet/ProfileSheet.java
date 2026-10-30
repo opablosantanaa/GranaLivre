@@ -298,6 +298,10 @@ public class ProfileSheet extends BaseSheet {
         view.findViewById(R.id.backup_save).setOnClickListener(v ->
                 createBackup.launch(BackupStorage.fileName(LocalDate.now())));
         view.findViewById(R.id.backup_import).setOnClickListener(v -> openBackup.launch(BACKUP_TYPES));
+        view.findViewById(R.id.privacy).setOnClickListener(v ->
+                LegalSheet.create(LegalSheet.PRIVACY).show(getChildFragmentManager(), "legal"));
+        view.findViewById(R.id.terms).setOnClickListener(v ->
+                LegalSheet.create(LegalSheet.TERMS).show(getChildFragmentManager(), "legal"));
 
         boolean debuggable =(requireContext().getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
         View demo = view.findViewById(R.id.demo);
