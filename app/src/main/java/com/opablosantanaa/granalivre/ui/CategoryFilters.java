@@ -9,6 +9,7 @@ import com.google.android.material.chip.ChipGroup;
 import com.opablosantanaa.granalivre.R;
 import com.opablosantanaa.granalivre.entity.Category;
 import com.opablosantanaa.granalivre.entity.TransactionType;
+import com.opablosantanaa.granalivre.relation.AccountWithBalance;
 
 import java.util.List;
 
@@ -24,11 +25,7 @@ public final class CategoryFilters {
 
     public static void populate(Context context, ChipGroup group, List<Category> categories, TransactionType type,
                                  long selectedId, java.util.function.LongConsumer onSelected) {
-        group.setOnCheckedStateChangeListener(null);
-        group.setSingleSelection(true);
-        group.setSelectionRequired(true);
-        group.removeAllViews();
-        add(context, group, context.getString(R.string.category_filter_all), ALL, selectedId == ALL);
+        reset(context, group, selectedId);
         if (categories != null) {
             for (Category category : categories) {
                 if (category.getCategory_type() != type || category.getCategory_parent_id() != null) continue;
@@ -36,6 +33,30 @@ public final class CategoryFilters {
                         category.getCategory_id() == selectedId);
             }
         }
+        listen(group, onSelected);
+    }
+
+    public static void populateAccounts(Context context, ChipGroup group, List<AccountWithBalance> accounts,
+                                        long selectedId, java.util.function.LongConsumer onSelected) {
+        reset(context, group, selectedId);
+        if (accounts != null) {
+            for (AccountWithBalance a : accounts) {
+                add(context, group, a.account.getAccount_bank_name(), a.account.getAccount_id(),
+                        a.account.getAccount_id() == selectedId);
+            }
+        }
+        listen(group, onSelected);
+    }
+
+    private static void reset(Context context, ChipGroup group, long selectedId) {
+        group.setOnCheckedStateChangeListener(null);
+        group.setSingleSelection(true);
+        group.setSelectionRequired(true);
+        group.removeAllViews();
+        add(context, group, context.getString(R.string.category_filter_all), ALL, selectedId == ALL);
+    }
+
+    private static void listen(ChipGroup group, java.util.function.LongConsumer onSelected) {
         group.setOnCheckedStateChangeListener((chips, checkedIds) -> {
             long id = ALL;
             if (!checkedIds.isEmpty()) {

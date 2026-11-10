@@ -96,7 +96,6 @@ public class EntrySheet extends BaseSheet {
             installments = Math.min(MAX_INSTALLMENTS, installments + 1);
             updateInstallments(view);
         });
-        // conta e cartão ficam em linhas separadas, mas só uma origem pode estar marcada
         ChipGroup sourcesGroup = view.findViewById(R.id.sources);
         ChipGroup cardsGroup = view.findViewById(R.id.cards);
         sourcesGroup.setOnCheckedStateChangeListener((g, ids) -> {
@@ -125,7 +124,6 @@ public class EntrySheet extends BaseSheet {
         return checkedTag(view.findViewById(R.id.cards)) > 0;
     }
 
-    /** Origem escolhida: id da conta (positivo) ou id do cartão com sinal negativo; 0 se nenhuma. */
     private long checkedSource(View view) {
         long card = checkedTag(view.findViewById(R.id.cards));
         return card > 0 ? -card : checkedTag(view.findViewById(R.id.sources));
@@ -139,7 +137,6 @@ public class EntrySheet extends BaseSheet {
         return null;
     }
 
-    /** Compra no cartão: a data de pagamento é sempre o vencimento da fatura em que a compra cai. */
     private void updateDue(View view) {
         Card card = type == TYPE_EXPENSE ? checkedCard(view) : null;
         TextView due = view.findViewById(R.id.due_info);

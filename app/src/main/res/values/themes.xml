@@ -48,7 +48,6 @@
         <item name="hintTextColor">@color/gl_primary</item>
     </style>
 
-    <!-- Escala tipográfica: 12 / 13 / 15 / 17 / 22 / 34 -->
     <style name="Text" parent="">
         <item name="android:fontFamily">@font/jakarta_regular</item>
         <item name="android:textColor">@color/gl_text</item>

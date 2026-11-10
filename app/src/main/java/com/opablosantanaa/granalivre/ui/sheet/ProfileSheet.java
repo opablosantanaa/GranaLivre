@@ -214,7 +214,6 @@ public class ProfileSheet extends BaseSheet {
         return row;
     }
 
-    /** Linha que abre a edição ao toque. */
     private void editable(View row, String title, BaseSheet sheet, String tag) {
         row.setBackgroundResource(R.drawable.bg_row_ripple);
         row.setClickable(true);

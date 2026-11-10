@@ -8,10 +8,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Comprovante de uma única operação (Pix, TED, boleto, pagamento): vira um extrato com um lançamento.
- * Procura o valor rotulado ("Valor"), a data e o nome da outra parte ("Para", "Recebedor", "De", "Pagador"...).
- */
 final class PdfReceiptParser {
     private static final String[] TO = {"destino", "para", "recebedor", "favorecido", "beneficiario",
             "nome do recebedor", "quem recebeu", "pago a"};
@@ -77,14 +73,12 @@ final class PdfReceiptParser {
                     return LocalDate.of(Integer.parseInt(m.group(3)), Integer.parseInt(m.group(2)),
                             Integer.parseInt(m.group(1)));
                 } catch (RuntimeException ignored) {
-                    // data inválida, continua procurando
                 }
             }
         }
         return null;
     }
 
-    /** Nome logo após um rótulo: na mesma linha ("Para: Fulano" / "Para | Fulano") ou na linha seguinte. */
     private static String labelled(List<List<String>> lines, int index, String[] labels) {
         List<String> line = lines.get(index);
         String first = PdfStatementParser.normalize(line.get(0)).replaceAll("[:\\s]+$", "");

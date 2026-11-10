@@ -20,6 +20,7 @@ import com.opablosantanaa.granalivre.entity.FinancialTransaction;
 import com.opablosantanaa.granalivre.entity.Category;
 import com.opablosantanaa.granalivre.entity.TransactionType;
 import com.opablosantanaa.granalivre.entity.Transfer;
+import com.opablosantanaa.granalivre.relation.AccountWithBalance;
 import com.opablosantanaa.granalivre.ui.Dates;
 import com.opablosantanaa.granalivre.ui.CategoryFilters;
 import com.opablosantanaa.granalivre.ui.MainViewModel;
@@ -42,6 +43,7 @@ public class MovesScreen extends Screen {
 
     private int filter = ALL;
     private long categoryFilter;
+    private long accountFilter;
     private MovesAdapter adapter;
 
     public MovesScreen() {
@@ -85,7 +87,10 @@ public class MovesScreen extends Screen {
             refreshCategories(view);
             renderLater(view);
         });
-        vm.accountList.observe(getViewLifecycleOwner(), v -> renderLater(view));
+        vm.accountList.observe(getViewLifecycleOwner(), accounts -> {
+            refreshAccounts(view);
+            renderLater(view);
+        });
         vm.cardList.observe(getViewLifecycleOwner(), v -> renderLater(view));
     }
 
@@ -105,6 +110,32 @@ public class MovesScreen extends Screen {
             transaction = null;
             transfer = t;
         }
+    }
+
+    private void refreshAccounts(View view) {
+        List<AccountWithBalance> accounts = vm().accountList.getValue();
+        boolean known = false;
+        if (accounts != null) {
+            for (AccountWithBalance a : accounts) known |= a.account.getAccount_id() == accountFilter;
+        }
+        if (!known) accountFilter = 0;
+        int visibility = accounts != null && accounts.size() > 1 ? View.VISIBLE : View.GONE;
+        view.findViewById(R.id.account_label).setVisibility(visibility);
+        view.findViewById(R.id.account_scroll).setVisibility(visibility);
+        CategoryFilters.populateAccounts(requireContext(), view.findViewById(R.id.account_filter), accounts,
+                accountFilter, id -> {
+                    accountFilter = id;
+                    renderLater(view);
+                });
+    }
+
+    private boolean inAccount(FinancialTransaction t) {
+        return accountFilter == 0 || (t.getAccount_id() != null && t.getAccount_id() == accountFilter);
+    }
+
+    private boolean inAccount(Transfer t) {
+        return accountFilter == 0 || t.getTransfer_from_account_id() == accountFilter
+                || t.getTransfer_to_account_id() == accountFilter;
     }
 
     private void refreshCategories(View view) {
@@ -140,6 +171,7 @@ public class MovesScreen extends Screen {
         long in = 0;
         long out = 0;
         for (FinancialTransaction t : transactions) {
+            if (!inAccount(t)) continue;
             if (t.getTransaction_type() == TransactionType.RECEITA) in += t.getTransaction_amount_cents();
             else out += t.getTransaction_amount_cents();
         }
@@ -156,6 +188,7 @@ public class MovesScreen extends Screen {
         List<Entry> entries = new ArrayList<>();
         if (filter != TRANSFERS) {
             for (FinancialTransaction t : transactions) {
+                if (!inAccount(t)) continue;
                 boolean income = t.getTransaction_type() == TransactionType.RECEITA;
                 if (filter == IN && !income) continue;
                 if (filter == OUT && income) continue;
@@ -164,7 +197,7 @@ public class MovesScreen extends Screen {
             }
         }
         if (categoryFilter == 0 && (filter == ALL || filter == TRANSFERS)) {
-            for (Transfer t : transfers) entries.add(new Entry(t));
+            for (Transfer t : transfers) if (inAccount(t)) entries.add(new Entry(t));
         }
         entries.sort((a, b) -> b.date.compareTo(a.date));
         Rows.Lookup lookup = Rows.lookup(vm.categoryList.getValue(), vm.accountList.getValue(), vm.cardList.getValue());

@@ -6,16 +6,21 @@ import android.content.Context;
 
 import com.opablosantanaa.granalivre.database.AppDatabase;
 import com.opablosantanaa.granalivre.domain.DefaultCategories;
+import com.opablosantanaa.granalivre.domain.InvoiceCalculator;
 import com.opablosantanaa.granalivre.domain.SalaryPlanner;
 import com.opablosantanaa.granalivre.domain.ofx.CategorySuggester;
 import com.opablosantanaa.granalivre.domain.ofx.OfxStatement;
 import com.opablosantanaa.granalivre.domain.ofx.OfxTransaction;
+import com.opablosantanaa.granalivre.entity.Card;
 import com.opablosantanaa.granalivre.entity.Category;
 import com.opablosantanaa.granalivre.entity.FinancialTransaction;
+import com.opablosantanaa.granalivre.entity.Invoice;
+import com.opablosantanaa.granalivre.entity.InvoiceStatus;
 import com.opablosantanaa.granalivre.entity.Recurrence;
 import com.opablosantanaa.granalivre.entity.TransactionType;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,16 +35,20 @@ public class StatementImportRepository extends BaseRepository {
 
     static final int MATCH_WINDOW_DAYS = 5;
 
+    public enum Block { NONE, IMPORTED, CHARGE_DUPLICATE, CREDIT, PAID_INVOICE }
+
     public static final class Row {
         public final OfxTransaction source;
+        public final Block block;
         public final boolean duplicate;
         public Long categoryId;
         public boolean selected;
         public FinancialTransaction match;
 
-        Row(OfxTransaction source, boolean duplicate, Long categoryId) {
+        Row(OfxTransaction source, Block block, Long categoryId) {
             this.source = source;
-            this.duplicate = duplicate;
+            this.block = block;
+            this.duplicate = block != Block.NONE;
             this.categoryId = categoryId;
             this.selected = !duplicate;
         }
@@ -135,6 +144,7 @@ public class StatementImportRepository extends BaseRepository {
 
     public void preview(long userId, long accountId, OfxStatement statement, RepositoryCallback<Preview> callback) {
         execute(() -> {
+            require(!statement.creditCard, "Este arquivo é uma fatura de cartão. Importe pela opção Fatura.");
             rules.requireOwnAccount(userId, accountId);
             Set<String> existing = new HashSet<>(database.financialTransactionDao().findImportIds(accountId));
             Map<String, Long> expense = categoryIds(userId, TransactionType.DESPESA);
@@ -146,13 +156,116 @@ public class StatementImportRepository extends BaseRepository {
                 Long categoryId = name == null ? null : ids.get(name);
                 if (categoryId == null) categoryId = ids.get(DefaultCategories.fallbackName(
                         t.isIncome() ? TransactionType.RECEITA : TransactionType.DESPESA));
-                rows.add(new Row(t, existing.contains(t.importId), categoryId));
+                rows.add(new Row(t, existing.contains(t.importId) ? Block.IMPORTED : Block.NONE, categoryId));
             }
             matchExisting(accountId, rows);
             Long atLedger = statement.ledgerBalanceCents == null ? null
                     : balanceAt(accountId, statement.ledgerBalanceDate);
             return new Preview(rows, database.accountDao().findBalance(accountId), atLedger);
         }, callback);
+    }
+
+    public void previewCard(long userId, long cardId, OfxStatement statement, RepositoryCallback<Preview> callback) {
+        execute(() -> {
+            require(statement.creditCard, "Este arquivo é um extrato de conta. Importe pela opção Extrato.");
+            Card card = rules.requireOwnCard(userId, cardId);
+            return new Preview(cardRows(userId, card, statement.transactions), 0, null);
+        }, callback);
+    }
+
+    public void commitCard(long userId, long cardId, List<Row> rows, RepositoryCallback<Result> callback) {
+        execute(() -> database.runInTransaction(() -> {
+            Card card = rules.requireOwnCard(userId, cardId);
+            List<OfxTransaction> sources = new ArrayList<>();
+            for (Row row : rows) sources.add(row.source);
+            List<Row> fresh = cardRows(userId, card, sources);
+            int imported = 0;
+            int skipped = 0;
+            for (int i = 0; i < rows.size(); i++) {
+                Row row = rows.get(i);
+                if (!row.selected) continue;
+                if (fresh.get(i).block != Block.NONE) {
+                    skipped++;
+                    continue;
+                }
+                FinancialTransaction t = new FinancialTransaction();
+                t.setUser_id(userId);
+                t.setCard_id(cardId);
+                t.setTransaction_type(TransactionType.DESPESA);
+                t.setTransaction_amount_cents(Math.abs(row.source.amountCents));
+                t.setTransaction_description(row.source.description);
+                t.setTransaction_date(row.source.date);
+                t.setTransaction_paid(true);
+                t.setCategory_id(row.categoryId);
+                t.setTransaction_import_id(row.source.importId);
+                rules.prepare(t);
+                database.financialTransactionDao().insert(t);
+                imported++;
+            }
+            require(imported > 0 || skipped > 0, "Nenhum lançamento selecionado");
+            return new Result(imported, 0, skipped, 0);
+        }), callback);
+    }
+
+    static int chargeSign(List<OfxTransaction> transactions) {
+        int negative = 0;
+        int positive = 0;
+        for (OfxTransaction t : transactions) {
+            if (t.amountCents < 0) negative++;
+            else positive++;
+        }
+        return negative >= positive ? -1 : 1;
+    }
+
+    private static String chargeKey(LocalDate dueDate, long cents) {
+        return dueDate + "|" + cents;
+    }
+
+    private List<Row> cardRows(long userId, Card card, List<OfxTransaction> source) {
+        long cardId = card.getCard_id();
+        Set<String> imported = new HashSet<>(database.financialTransactionDao().findCardImportIds(cardId));
+        Map<Long, Invoice> invoices = new HashMap<>();
+        Map<String, Integer> charges = new HashMap<>();
+        for (FinancialTransaction t : database.financialTransactionDao().findCardCharges(cardId)) {
+            Invoice invoice = invoices.computeIfAbsent(t.getInvoice_id(), database.invoiceDao()::findById);
+            if (invoice == null) continue;
+            charges.merge(chargeKey(invoice.getInvoice_due_date(), t.getTransaction_amount_cents()), 1, Integer::sum);
+        }
+        Map<String, Long> expense = categoryIds(userId, TransactionType.DESPESA);
+        Long fallback = expense.get(DefaultCategories.fallbackName(TransactionType.DESPESA));
+        int sign = chargeSign(source);
+        List<Row> rows = new ArrayList<>();
+        for (OfxTransaction t : source) {
+            long cents = Math.abs(t.amountCents);
+            boolean charge = Long.signum(t.amountCents) == sign;
+            OfxTransaction normalized = new OfxTransaction(t.importId, t.type, t.date, charge ? -cents : cents,
+                    t.description);
+            Block block;
+            if (!charge) {
+                block = Block.CREDIT;
+            } else if (imported.contains(t.importId)) {
+                block = Block.IMPORTED;
+            } else {
+                YearMonth month = InvoiceCalculator.referenceMonth(t.date, card.getCard_closing_day());
+                Invoice invoice = database.invoiceDao().findByCardAndMonth(cardId, month);
+                LocalDate due = invoice != null ? invoice.getInvoice_due_date()
+                        : InvoiceCalculator.dueDate(month, card.getCard_closing_day(), card.getCard_due_day());
+                String key = chargeKey(due, cents);
+                Integer left = charges.get(key);
+                if (invoice != null && invoice.getInvoice_status() == InvoiceStatus.PAGA) {
+                    block = Block.PAID_INVOICE;
+                } else if (left != null && left > 0) {
+                    charges.put(key, left - 1);
+                    block = Block.CHARGE_DUPLICATE;
+                } else {
+                    block = Block.NONE;
+                }
+            }
+            String name = CategorySuggester.suggest(t.description, false);
+            Long categoryId = name == null ? null : expense.get(name);
+            rows.add(new Row(normalized, block, categoryId == null ? fallback : categoryId));
+        }
+        return rows;
     }
 
     private void matchExisting(long accountId, List<Row> rows) {

@@ -55,10 +55,6 @@ public class GoalRepository extends BaseRepository {
         }, callback);
     }
 
-    /**
-     * Guarda (valor positivo) ou retira (negativo) dinheiro de uma meta, movendo-o de/para uma conta.
-     * Guardar exige saldo na conta; retirar não pode passar do que está guardado na meta.
-     */
     public void move(long goalId, long accountId, long cents, RepositoryCallback<Void> callback) {
         execute(() -> {
             database.runInTransaction(() -> {

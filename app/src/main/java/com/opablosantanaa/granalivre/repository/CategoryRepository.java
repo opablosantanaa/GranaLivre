@@ -61,7 +61,6 @@ public class CategoryRepository extends BaseRepository {
         }, callback);
     }
 
-    /** Move lançamentos e recorrências sem categoria para "Outras despesas" / "Outras receitas". */
     public void adoptOrphans(long userId) {
         execute(() -> {
             database.runInTransaction(() -> {

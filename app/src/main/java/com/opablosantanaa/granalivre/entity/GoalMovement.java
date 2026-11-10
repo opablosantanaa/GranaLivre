@@ -12,10 +12,6 @@ import com.opablosantanaa.granalivre.converter.Converters;
 
 import java.time.LocalDate;
 
-/**
- * Dinheiro reservado de uma conta para uma meta (valor positivo) ou devolvido da meta para a conta (negativo).
- * Entra no saldo da conta: reservar diminui o saldo disponível; retirar devolve.
- */
 @Entity (tableName = "goal_movements",
         foreignKeys = {
                 @ForeignKey(entity = Goal.class,

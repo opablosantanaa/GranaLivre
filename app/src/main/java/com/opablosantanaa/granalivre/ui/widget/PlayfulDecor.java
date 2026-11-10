@@ -15,11 +15,6 @@ import com.opablosantanaa.granalivre.R;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Decoração lúdica das telas de entrada: selos redondos com ícones do app e brilhos de 4 pontas espalhados
- * num palco, flutuando devagar. As posições são frações do palco, então o desenho se adapta ao tamanho da tela.
- * Tudo é decorativo e fica fora da acessibilidade.
- */
 public final class PlayfulDecor {
     private final FrameLayout stage;
     private final float density;
@@ -50,7 +45,6 @@ public final class PlayfulDecor {
         return Math.round(value * density);
     }
 
-    /** Selo redondo com degradê e um ícone branco; (x, y) é o centro, em fração do palco. */
     public PlayfulDecor badge(float x, float y, int sizeDp, int icon, int from, int to) {
         FrameLayout badge = new FrameLayout(stage.getContext());
         GradientDrawable circle = new GradientDrawable(GradientDrawable.Orientation.TL_BR, new int[]{from, to});
@@ -96,7 +90,6 @@ public final class PlayfulDecor {
         }
     }
 
-    /** Entrada com "pop" escalonado e, depois, flutuação contínua (selos sobem e descem, brilhos pulsam). */
     public void start() {
         stop();
         for (int i = 0; i < items.size(); i++) {

@@ -43,7 +43,6 @@ import java.util.List;
 
 public class RecurringScreen extends Screen {
     private static final String STATE_TYPE = "type";
-    /** Tipo pedido antes de a aba existir (ex.: aviso da tela inicial). */
     public static TransactionType pendingType;
 
     private TransactionType type = TransactionType.DESPESA;
@@ -174,7 +173,6 @@ public class RecurringScreen extends Screen {
 
         RecurrenceStatus status = RecurrenceStatus.of(r, vm().pendingList.getValue(), vm().history.getValue(), LocalDate.now());
         TextView next = row.findViewById(R.id.next);
-        // dentro das seções "Mensais"/"Semanais"/"Anuais" a frequência já está no título
         next.setText(status.partial(r) ? getString(R.string.recurring_open_left, Money.plain(status.openCents))
                 : showFrequency ? frequencyName(r.getRecurrence_frequency()) : "");
         next.setVisibility(next.getText().length() == 0 ? View.GONE : View.VISIBLE);

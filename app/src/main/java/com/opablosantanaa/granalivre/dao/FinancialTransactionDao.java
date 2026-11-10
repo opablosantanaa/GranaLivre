@@ -69,6 +69,14 @@ public interface FinancialTransactionDao {
             + "AND transaction_import_id IS NOT NULL")
     List<String> findImportIds(long accountId);
 
+    @Query("SELECT transaction_import_id FROM transactions WHERE card_id = :cardId "
+            + "AND transaction_import_id IS NOT NULL")
+    List<String> findCardImportIds(long cardId);
+
+    @Query("SELECT * FROM transactions WHERE card_id = :cardId AND transaction_type = 'DESPESA' "
+            + "AND invoice_id IS NOT NULL")
+    List<FinancialTransaction> findCardCharges(long cardId);
+
     @Query("SELECT * FROM transactions WHERE account_id = :accountId AND card_id IS NULL "
             + "AND transaction_import_id IS NULL AND transaction_date BETWEEN :start AND :end "
             + "ORDER BY transaction_date, transaction_id")

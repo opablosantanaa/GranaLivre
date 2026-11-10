@@ -14,19 +14,11 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Lê extratos e comprovantes em PDF já convertidos em linhas/colunas por {@link PdfLayout}. Em vez de um
- * leitor por banco, usa regras que valem para os layouts dos principais bancos (Itaú, Bradesco, Caixa, Santander,
- * Inter, Nubank, Mercado Pago, PicPay): uma linha com valor em dinheiro é um lançamento (âncora); a data vem da
- * própria linha ou do último cabeçalho de dia; o texto das linhas vizinhas sem valor completa a descrição.
- */
 public final class PdfStatementParser {
     private static final String MINUS = "[-−–]";
     private static final Pattern AMOUNT = Pattern.compile(
             "(?<![\\d.,])(" + MINUS + "|\\+)?\\s*(R\\$)?\\s*(" + MINUS + "|\\+)?\\s*"
-                    // "1.234,56" ou, quando o OCR troca a vírgula por ponto, "234.56"
                     + "(\\d{1,3}(?:\\.\\d{3})*,\\d{2}|\\d{1,3}\\.\\d{2})(?![\\d,])"
-                    // sufixo de sinal: "C"/"D" (Caixa) ou "(+)"/"(-)" (Banco do Brasil)
                     + "(?:\\s*([CDcd])(?![a-bd-zA-Z])|\\s*\\(([+\\-])\\))?");
     private static final Pattern SHORT_NUMBER = Pattern.compile("^\\d{1,4}$");
     private static final Pattern DAY_RANGE = Pattern.compile("(\\d{2})\\s+a\\s+(\\d{2})/(\\d{2})/(\\d{4})");
@@ -45,7 +37,6 @@ public final class PdfStatementParser {
         for (int i = 0; i < names.length; i++) MONTHS.put(names[i], i + 1);
     }
 
-    /** Valor de dinheiro encontrado num segmento: centavos com o sinal explícito, se houver. */
     static final class Amount {
         final long cents;
         final int sign;
@@ -75,7 +66,6 @@ public final class PdfStatementParser {
 
     private PdfStatementParser() {}
 
-    /** Linha solta (sem valor) que ainda vai ser atribuída a um lançamento. */
     private static final class Orphan {
         final String text;
         final int page;
@@ -88,7 +78,6 @@ public final class PdfStatementParser {
         }
     }
 
-    /** Linhas sem posição (testes, texto já montado): usa a regra de simetria para as linhas soltas. */
     public static OfxStatement parse(List<List<String>> lines) throws OfxException {
         List<PdfLayout.Line> rows = new ArrayList<>();
         for (List<String> line : lines) rows.add(new PdfLayout.Line(0, Float.NaN, line));
@@ -125,7 +114,6 @@ public final class PdfStatementParser {
                     continue;
                 }
             }
-            // agendamentos ainda não realizados (Banco do Brasil) ficam fora da importação
             if (lower.startsWith("lancamentos futuros")) break;
             if (lower.startsWith("saldo final") && summaryLedger == null) {
                 Amount balance = firstAmount(joined);
@@ -263,7 +251,7 @@ public final class PdfStatementParser {
             }
             break;
         }
-        return new OfxStatement("PDF".equals(bank) ? null : bank, account(lines), "BRL", false, start, end,
+        return new OfxStatement("PDF".equals(bank) ? null : bank, account(lines), "BRL", looksLikeInvoice(all), start, end,
                 ledger, ledgerDate, transactions);
     }
 
@@ -273,12 +261,6 @@ public final class PdfStatementParser {
         return copy;
     }
 
-    /**
-     * Distribui as linhas soltas entre o lançamento anterior e o próximo. Com posições, cada linha vai para o
-     * lançamento mais próximo na vertical. Sem posições, vale a simetria das tabelas centralizadas: o texto de um
-     * lançamento fica metade acima, metade abaixo da linha do valor, então o anterior recebe abaixo tantas linhas
-     * quantas recebeu acima, e o resto vai para cima do próximo.
-     */
     private static void attach(List<Orphan> orphans, Anchor previous, Anchor next, float reach) {
         if (positioned(orphans, previous) && !Float.isNaN(next.y)) {
             for (Orphan o : orphans) {
@@ -298,7 +280,6 @@ public final class PdfStatementParser {
         orphans.clear();
     }
 
-    /** Linhas soltas antes de um cabeçalho/fim: ficam com o lançamento anterior só se estiverem mais perto dele. */
     private static void barrier(List<Orphan> orphans, Anchor previous, PdfLayout.Line boundary, float reach) {
         if (previous != null) {
             if (positioned(orphans, previous)) {
@@ -324,14 +305,12 @@ public final class PdfStatementParser {
         return true;
     }
 
-    /** Distância vertical; linhas longe demais (rodapé, outra página) contam como infinitas. */
     private static float distance(Orphan o, int page, float y, float reach) {
         if (o.page != page) return Float.MAX_VALUE;
         float d = Math.abs(o.y - y);
         return d > reach ? Float.MAX_VALUE : d;
     }
 
-    /** Até onde uma linha solta ainda pertence a um lançamento: 2,5 vezes o espaçamento típico entre linhas. */
     private static float reach(List<PdfLayout.Line> rows) {
         List<Float> gaps = new ArrayList<>();
         for (int i = 1; i < rows.size(); i++) {
@@ -344,7 +323,6 @@ public final class PdfStatementParser {
         return gaps.get(gaps.size() / 2) * 2.5f;
     }
 
-    /** Define o sinal de cada valor: sinal explícito, C/D, seção de entradas/saídas, saldo ou palavras-chave. */
     private static void sign(List<Anchor> anchors) {
         boolean explicitNegatives = false;
         for (Anchor a : anchors) {
@@ -417,7 +395,6 @@ public final class PdfStatementParser {
             if (m.find()) {
                 String before = segment.substring(0, m.start()).trim();
                 String after = segment.substring(m.end()).trim();
-                // uma letra sobrando depois do valor é ruído de OCR ("1.064,17 Cc")
                 boolean whole = before.isEmpty() && after.length() <= 1;
                 boolean labelled = !before.isEmpty() && before.endsWith(":") && after.isEmpty();
                 if (whole || labelled || segment.contains("R$")) {
@@ -478,7 +455,6 @@ public final class PdfStatementParser {
         }
     }
 
-    /** Linha de período ("01/04/2026 a 30/04/2026", "Período: ... até ..."): não é cabeçalho de dia. */
     private static LocalDate[] period(String text) {
         String lower = normalize(text);
         Matcher m = ANY_NUMERIC_DATE.matcher(text);
@@ -524,9 +500,7 @@ public final class PdfStatementParser {
 
     private static boolean isNoise(String lower) {
         return lower.startsWith("data:") || lower.startsWith("folha") || lower.matches("^\\d+\\s*(/|de)\\s*\\d+$")
-                // rodapés de atendimento
                 || lower.matches("^(fale com a gente|sac\\b|ouvidoria|central de atendimento|duvidas\\?|alo ).*")
-                // logotipo/cabeçalho repetido no topo de cada página
                 || lower.matches("^#?(caixa|bradesco( celular)?|itau|nubank|inter|santander|banco do brasil|picpay"
                 + "|mercado pago|c6 bank|pessoal)$");
     }
@@ -566,6 +540,11 @@ public final class PdfStatementParser {
         StringBuilder sb = new StringBuilder();
         for (List<String> line : lines) sb.append(String.join(" ", line)).append('\n');
         return sb.toString();
+    }
+
+    static boolean looksLikeInvoice(String normalized) {
+        return normalized.contains("total da fatura") || normalized.contains("vencimento da fatura")
+                || normalized.contains("pagamento minimo") || normalized.contains("valor minimo");
     }
 
     static String normalize(String text) {

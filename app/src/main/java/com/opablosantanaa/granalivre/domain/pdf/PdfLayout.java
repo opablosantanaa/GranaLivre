@@ -3,10 +3,6 @@ package com.opablosantanaa.granalivre.domain.pdf;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Reconstrói linhas e colunas a partir das posições dos caracteres de um PDF. Cada linha vira uma lista de
- * segmentos: trechos de texto separados por um espaço horizontal grande (colunas da tabela do extrato).
- */
 public final class PdfLayout {
     public static final class Glyph {
         final float x;
@@ -28,7 +24,6 @@ public final class PdfLayout {
         }
     }
 
-    /** Uma linha do documento: página, altura (base do texto) e colunas. */
     public static final class Line {
         public final int page;
         public final float y;
@@ -103,7 +98,6 @@ public final class PdfLayout {
         current.setLength(0);
     }
 
-    /** Formato de depuração e dos testes: segmentos separados por " | ". */
     public static String format(List<String> line) {
         return String.join(" | ", line);
     }

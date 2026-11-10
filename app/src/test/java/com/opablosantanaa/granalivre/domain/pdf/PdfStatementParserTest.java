@@ -16,10 +16,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * Amostras no formato que {@link PdfLayout} produz (colunas separadas por " | "), reproduzindo a estrutura dos
- * extratos reais de cada banco com nomes e valores trocados.
- */
 public class PdfStatementParserTest {
     private static OfxStatement parse(String... text) throws OfxException {
         List<List<String>> lines = new ArrayList<>();
@@ -37,6 +33,14 @@ public class PdfStatementParserTest {
         assertEquals(LocalDate.parse(date), t.date);
         assertEquals(cents, t.amountCents);
         assertEquals(description, t.description);
+    }
+
+    @Test
+    public void invoiceWordingMarksPdfAsInvoice() {
+        assertTrue(PdfStatementParser.looksLikeInvoice(PdfStatementParser.normalize("Total da fatura R$ 900,00")));
+        assertTrue(PdfStatementParser.looksLikeInvoice(PdfStatementParser.normalize("Pagamento mínimo R$ 90,00")));
+        assertEquals(false, PdfStatementParser.looksLikeInvoice(PdfStatementParser.normalize(
+                "Saldo anterior 1.000,00 PAGAMENTO FATURA CARTAO -500,00")));
     }
 
     @Test
@@ -118,7 +122,6 @@ public class PdfStatementParserTest {
         assertEquals(LocalDate.of(2026, 10, 20), s.end);
     }
 
-    /** Linha com posição vertical, como sai do PDF: "y:texto | texto". */
     private static OfxStatement parseAt(String... text) throws OfxException {
         List<PdfLayout.Line> rows = new ArrayList<>();
         for (String line : text) {
@@ -131,7 +134,6 @@ public class PdfStatementParserTest {
 
     @Test
     public void bancoDoBrasilParenthesizedSignsAndFutureEntries() throws OfxException {
-        // o título do lançamento fica logo acima da linha do valor; o nome que não coube, logo abaixo
         OfxStatement s = parseAt(
                 "10:Extrato de Conta Corrente",
                 "20:Cliente: FULANO DE TAL",

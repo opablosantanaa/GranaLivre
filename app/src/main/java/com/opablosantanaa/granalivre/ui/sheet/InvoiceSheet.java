@@ -32,12 +32,10 @@ import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Fatura detalhada de um cartão: navega entre os meses, mostra compras, total, datas e permite pagar. */
 public class InvoiceSheet extends BaseSheet {
     private static final String ARG_CARD = "card_id";
 
     private Card card;
-    /** Faturas do cartão, da mais antiga para a mais nova. */
     private final List<Invoice> invoices = new ArrayList<>();
     private int index = -1;
     private LiveData<InvoiceWithTransactions> detail;
@@ -97,7 +95,6 @@ public class InvoiceSheet extends BaseSheet {
         });
     }
 
-    /** A fatura que está recebendo as compras de hoje; se ainda não existir, a mais recente. */
     private int currentIndex() {
         YearMonth current = InvoiceCalculator.referenceMonth(LocalDate.now(), card.getCard_closing_day());
         int best = invoices.size() - 1;
@@ -198,7 +195,6 @@ public class InvoiceSheet extends BaseSheet {
                 toast(error, reopen, R.string.invoice_reopened)));
     }
 
-    /** Mantém a folha aberta depois de pagar ou desfazer: a tela se atualiza sozinha. */
     private RepositoryCallback<Void> toast(TextView error, View button, int message) {
         return new RepositoryCallback<Void>() {
             @Override

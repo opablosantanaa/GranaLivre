@@ -18,7 +18,6 @@ public final class RecurrenceStatus {
     public final LocalDate date;
     public final int overdueCount;
     public final long daysUntil;
-    /** Valor em aberto da ocorrência atual; menor que o da recorrência quando já houve pagamento parcial. */
     public long openCents;
 
     private RecurrenceStatus(Kind kind, LocalDate date, int overdueCount, long daysUntil) {

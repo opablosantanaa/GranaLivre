@@ -48,6 +48,52 @@ public class StatementImportTest extends DatabaseTest {
     }
 
     @Test
+    public void cardImportBlocksSameAmountInSameInvoiceAndSkipsPayments() throws OfxException {
+        long accountId = createAccount(userId, 0);
+        long cardId = createCard(userId, accountId, 25, 5);
+        FinancialTransaction existing = new FinancialTransaction();
+        existing.setUser_id(userId);
+        existing.setCard_id(cardId);
+        existing.setTransaction_type(TransactionType.DESPESA);
+        existing.setTransaction_amount_cents(5_000);
+        existing.setTransaction_date(LocalDate.of(2026, 10, 10));
+        existing.setTransaction_paid(true);
+        FinancialTransactionRepository transactions = new FinancialTransactionRepository(database, DIRECT, DIRECT);
+        DatabaseTest.<Long>success(cb -> transactions.insert(existing, cb));
+
+        OfxStatement invoice = com.opablosantanaa.granalivre.domain.ofx.CsvParser.parse(
+                "date,title,amount\n2026-10-12,Padaria,50.00\n2026-10-13,Mercado,80.00\n"
+                        + "2026-10-28,Uber,50.00\n2026-10-20,Pagamento recebido,-300.00\n");
+        StatementImportRepository.Preview preview = success(cb -> repository.previewCard(userId, cardId, invoice, cb));
+        assertEquals(StatementImportRepository.Block.CHARGE_DUPLICATE, preview.rows.get(0).block);
+        assertFalse(preview.rows.get(0).selected);
+        assertEquals(StatementImportRepository.Block.NONE, preview.rows.get(1).block);
+        assertEquals(StatementImportRepository.Block.NONE, preview.rows.get(2).block);
+        assertEquals(StatementImportRepository.Block.CREDIT, preview.rows.get(3).block);
+
+        preview.rows.get(0).selected = true;
+        StatementImportRepository.Result result = success(cb -> repository.commitCard(userId, cardId, preview.rows, cb));
+        assertEquals(2, result.imported);
+        assertEquals(1, result.skipped);
+        assertEquals(3, database.financialTransactionDao().findCardCharges(cardId).size());
+        assertEquals(0, database.accountDao().findBalance(accountId));
+
+        StatementImportRepository.Preview again = success(cb -> repository.previewCard(userId, cardId, invoice, cb));
+        assertEquals(StatementImportRepository.Block.IMPORTED, again.rows.get(1).block);
+        assertEquals(StatementImportRepository.Block.IMPORTED, again.rows.get(2).block);
+    }
+
+    @Test
+    public void statementAndInvoiceCannotSwapTargets() throws OfxException {
+        long accountId = createAccount(userId, 0);
+        long cardId = createCard(userId, accountId, 25, 5);
+        OfxStatement invoice = com.opablosantanaa.granalivre.domain.ofx.CsvParser.parse(
+                "date,title,amount\n2026-10-12,Padaria,50.00\n");
+        DatabaseTest.<StatementImportRepository.Preview>failure(cb -> repository.preview(userId, accountId, invoice, cb));
+        DatabaseTest.<StatementImportRepository.Preview>failure(cb -> repository.previewCard(userId, cardId, statement, cb));
+    }
+
+    @Test
     public void importsOnceAndMarksDuplicatesOnSecondImport() {
         long accountId = createAccount(userId, 100_000);
         StatementImportRepository.Preview preview = success(cb -> repository.preview(userId, accountId, statement, cb));

@@ -63,7 +63,6 @@ public class AccountSheet extends BaseSheet {
         }
         if (editing != null) {
             ((TextInputEditText) view.findViewById(R.id.bank)).setText(editing.account.getAccount_bank_name());
-            // o campo mostra o saldo atual; ao salvar, a diferença ajusta o saldo inicial da conta
             ((TextInputEditText) view.findViewById(R.id.initial)).setText(editable(editing.balanceCents));
         }
         TextView error = view.findViewById(R.id.error);

@@ -109,7 +109,6 @@ public class GoalSheet extends BaseSheet {
         view.findViewById(R.id.edit_group).setVisibility(View.VISIBLE);
         ((TextView) view.findViewById(R.id.summary)).setText(getString(R.string.goals_progress,
                 Money.plain(goal.getGoal_saved_cents()), Money.plain(goal.getGoal_target_cents())));
-        // Guardar tira o valor de uma conta; Retirar devolve para uma conta (permitido antes de chegar a 100%)
         SegmentedControl mode = view.findViewById(R.id.mode);
         mode.setOptions(getString(R.string.goal_mode_save), getString(R.string.goal_mode_withdraw));
         mode.setPalette(color(R.color.gl_line), color(R.color.gl_text_secondary),

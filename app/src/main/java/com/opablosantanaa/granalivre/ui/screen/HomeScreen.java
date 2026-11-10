@@ -31,6 +31,8 @@ import com.google.android.material.button.MaterialButton;
 import com.opablosantanaa.granalivre.App;
 import com.opablosantanaa.granalivre.R;
 import com.opablosantanaa.granalivre.database.AppDatabase;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.opablosantanaa.granalivre.domain.ofx.CsvParser;
 import com.opablosantanaa.granalivre.domain.ofx.OfxException;
 import com.opablosantanaa.granalivre.domain.ofx.OfxParser;
 import com.opablosantanaa.granalivre.domain.ofx.OfxStatement;
@@ -231,17 +233,28 @@ public class HomeScreen extends Screen {
     }
 
     private void startImport() {
-        List<?> accounts = vm().accountList.getValue();
-        if (accounts == null || accounts.isEmpty()) {
-            new AccountSheet().show(getChildFragmentManager(), "account");
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.import_choose_title)
+                .setItems(new CharSequence[]{getString(R.string.import_kind_statement),
+                        getString(R.string.import_kind_invoice)}, (d, which) -> pickImport(which == 1))
+                .show();
+    }
+
+    private void pickImport(boolean invoice) {
+        List<?> targets = invoice ? vm().cardList.getValue() : vm().accountList.getValue();
+        if (targets == null || targets.isEmpty()) {
+            if (invoice) new CardSheet().show(getChildFragmentManager(), "card");
+            else new AccountSheet().show(getChildFragmentManager(), "account");
             return;
         }
+        vm().importingInvoice = invoice;
         pickStatement.launch(new String[]{"*/*"});
     }
 
     private void onStatementPicked(Uri uri) {
         if (uri == null || !isAdded()) return;
         Context context = requireContext().getApplicationContext();
+        boolean invoice = vm().importingInvoice;
         Toast.makeText(context, R.string.import_reading, Toast.LENGTH_SHORT).show();
         AppDatabase.databaseWriteExecutor.execute(() -> {
             String error = null;
@@ -256,13 +269,20 @@ public class HomeScreen extends Screen {
                     if (out.size() > MAX_STATEMENT_BYTES) break;
                 }
                 if (out.size() > MAX_STATEMENT_BYTES) error = context.getString(R.string.import_too_big);
-                else if (PdfStatementReader.isPdf(out.toByteArray())) {
+                else if (invoice && PdfStatementReader.isPdf(out.toByteArray())) {
+                    error = context.getString(R.string.import_invoice_pdf);
+                } else if (PdfStatementReader.isPdf(out.toByteArray())) {
                     statement = PdfStatementReader.read(context, out.toByteArray());
-                } else {
+                } else if (OfxParser.isOfx(out.toByteArray())) {
                     statement = OfxParser.parse(out.toByteArray());
+                } else {
+                    statement = CsvParser.parse(out.toByteArray());
                 }
                 if (statement != null && statement.transactions.isEmpty() && statement.ledgerBalanceCents == null) {
                     error = context.getString(R.string.import_empty);
+                    statement = null;
+                } else if (statement != null && statement.creditCard != invoice) {
+                    error = context.getString(invoice ? R.string.import_not_invoice : R.string.import_not_statement);
                     statement = null;
                 }
             } catch (IOException | SecurityException e) {
@@ -441,10 +461,6 @@ view.findViewById(R.id.identity).setContentDescription(full + ", " + Dates.today
                 tipIndex == tips.size() - 1 ? R.string.advisor_restart : R.string.advisor_next);
     }
 
-    /**
-     * A linha do título tem só a altura do ícone (32dp) e o Android corta o toque do X nesse limite;
-     * o TouchDelegate devolve ao botão a área de toque de 48dp.
-     */
     private void expandCloseTouchArea(View view) {
         View card = view.findViewById(R.id.advisor_card);
         View header = view.findViewById(R.id.advisor_header);
@@ -460,7 +476,6 @@ view.findViewById(R.id.identity).setContentDescription(full + ", " + Dates.today
         });
     }
 
-    /** Abre o balão com a ponta sob a moeda, crescendo a partir dela. */
     private void openBubble(View view) {
         View bubble = view.findViewById(R.id.advisor_bubble);
         View coin = view.findViewById(R.id.advisor);
@@ -751,7 +766,6 @@ view.findViewById(R.id.identity).setContentDescription(full + ", " + Dates.today
         }
         Category category = MainViewModel.find(categories, worst.getCategory_id());
         String name = category == null ? "" : category.getCategory_name();
-        // acima de 100% o aviso fala que estourou, sem citar porcentagem
         ((TextView) view.findViewById(R.id.warning_text)).setText(worstRatio > 1f
                 ? getString(R.string.budget_warning_over, name, Dates.month(month))
                 : getString(R.string.budget_warning, name, Math.round(worstRatio * 100), Dates.month(month)));

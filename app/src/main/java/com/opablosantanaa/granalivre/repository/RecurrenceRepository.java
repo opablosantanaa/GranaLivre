@@ -71,11 +71,6 @@ public class RecurrenceRepository extends BaseRepository {
         }, callback);
     }
 
-    /**
-     * Registra um pagamento/recebimento parcial da ocorrência em aberto mais antiga. O valor informado vira
-     * um lançamento pago e é abatido da ocorrência, que continua pendente com o restante. Se o valor cobrir
-     * o restante, a ocorrência é quitada por inteiro.
-     */
     public void settlePartial(Recurrence recurrence, long cents, LocalDate settledOn, RepositoryCallback<Boolean> callback) {
         execute(() -> database.runInTransaction(() -> {
             require(cents > 0, "O valor deve ser maior que zero");
@@ -113,7 +108,6 @@ public class RecurrenceRepository extends BaseRepository {
         }), callback);
     }
 
-    /** Cria (sem gravar) o lançamento pendente da próxima ocorrência ainda não gerada e avança a recorrência. */
     private FinancialTransaction openNextOccurrence(long recurrenceId) {
         Recurrence stored = recurrenceDao.findById(recurrenceId);
         require(stored != null, "Recorrência não encontrada");

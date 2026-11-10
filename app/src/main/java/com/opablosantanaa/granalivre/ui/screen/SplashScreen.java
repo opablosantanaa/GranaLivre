@@ -46,7 +46,6 @@ public class SplashScreen extends Screen {
             view.setPadding(0, app().topInset(), 0, app().bottomInset());
         });
 
-        // selos com ícones do app, nas cores das categorias, ao redor do mascote
         decor = new PlayfulDecor((FrameLayout) stage)
                 .badge(0.20f, 0.16f, 72, R.drawable.ic_cat_salary, 0xFF22A06B, 0xFF2EC4B6)
                 .badge(0.80f, 0.13f, 64, R.drawable.ic_target, 0xFFFFB547, 0xFFF06292)

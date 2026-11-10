@@ -55,6 +55,7 @@ public class MainViewModel extends AndroidViewModel {
     public final GoalRepository goals;
     public final StatementImportRepository imports;
     public OfxStatement pendingImport;
+    public boolean importingInvoice;
 
     private final MutableLiveData<Long> userId = new MutableLiveData<>();
     private final MutableLiveData<YearMonth> selectedMonth = new MutableLiveData<>(YearMonth.now());

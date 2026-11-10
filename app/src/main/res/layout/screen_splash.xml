@@ -22,7 +22,6 @@
         app:layout_constraintBottom_toTopOf="@id/headline"
         app:layout_constraintStart_toStartOf="parent" />
 
-    <!-- Palco: mascote no pedestal; os selos e brilhos são posicionados pelo código -->
     <FrameLayout
         android:id="@+id/stage"
         android:layout_width="0dp"

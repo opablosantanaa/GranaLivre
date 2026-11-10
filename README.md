@@ -10,6 +10,8 @@ Todos os dados ficam **somente no aparelho**, em um banco **Room (SQLite)**. O a
 
 O aplicativo está disponível para celulares com **Android 8.0 ou superior**.
 
+> 🚀 **Em breve na Google Play Store.** Enquanto isso, instale pelo APK abaixo.
+
 ### Baixar o aplicativo
 
 [**📥 Baixar granalivre.apk**](app/release/granalivre.apk)
@@ -34,13 +36,14 @@ Não é necessário instalar Android Studio, conectar o celular a um computador 
 - **Faturas**: navegação entre meses, compras da fatura, limite disponível, pagamento por uma conta escolhida e opção de desfazer o pagamento. Fatura paga não aceita alterações.
 - **Compras parceladas**: divisão do total sem perder centavos (a primeira parcela recebe o resto), com cada parcela na fatura do seu mês.
 - **Recorrentes**: despesas e receitas semanais, mensais ou anuais, com pausa, retomada, alertas de atraso e registro de pagamento total ou em parcela.
-- **Movimentos**: lista mensal agrupada por dia, com totais de entradas, saídas e resultado. O filtro de categoria acompanha o tipo escolhido: categorias de receita em Entradas e de despesa em Saídas. Ao filtrar por uma categoria, os lançamentos das subcategorias dela também aparecem.
+- **Movimentos**: lista mensal agrupada por dia, com totais de entradas, saídas e resultado. O filtro de categoria acompanha o tipo escolhido: categorias de receita em Entradas e de despesa em Saídas. Ao filtrar por uma categoria, os lançamentos das subcategorias dela também aparecem. Com duas contas ou mais, um filtro por **conta** mostra só os lançamentos e transferências daquela conta, com os totais recalculados.
 - **Análises**: resultado por semana, mês ou ano, gastos e receitas por categoria, orçamento do mês e mapa de calor da movimentação diária.
 - **Orçamentos (limites)**: limite mensal por categoria para **qualquer mês**, escolhido com setas de mês anterior e próximo, com um resumo dos limites já definidos naquele mês. Um limite registrado pode ser **editado** ou **apagado**. O app avisa ao atingir parte do limite e ao estourá-lo.
 - **Calculadora de salário**: o usuário informa as receitas esperadas no próximo mês e quanto quer que sobre. O app usa os gastos do último mês, por categoria, e mostra quanto cada um representaria da receita e quanto reduzir para atingir a economia. Cada categoria pode ser marcada como **Manter**, **Moderado** ou **Drástico**, e a escolha fica salva no aparelho. Se a meta não fechar, o app avisa quanto falta. O resultado pode ser aplicado como limites do mês seguinte.
 - **Metas**: valor alvo, prazo opcional e reservas guardadas a partir de uma conta ou devolvidas a ela.
 - **Assessor de finanças**: dicas de atenção, alerta e elogio geradas a partir dos dados do período, com alertas de contas e recebimentos recorrentes atrasados que seguem a mesma regra da aba Recorrentes.
-- **Importação de extratos**: arquivos **OFX** (1.x SGML e 2.x XML) e **PDF**, com detecção de duplicados, sugestão de categoria por palavras-chave e conciliação com o saldo informado no extrato. Uma linha que corresponde a um lançamento já registrado no app (mesmo tipo e valor, até 5 dias de diferença) é **vinculada** a ele em vez de duplicar. Isso vale também para a próxima ocorrência de uma recorrente paga antes do vencimento.
+- **Importação de extratos**: arquivos **OFX** (1.x SGML e 2.x XML), **CSV** e **PDF**, com detecção de duplicados, sugestão de categoria por palavras-chave e conciliação com o saldo informado no extrato. Uma linha que corresponde a um lançamento já registrado no app (mesmo tipo e valor, até 5 dias de diferença) é **vinculada** a ele em vez de duplicar. Isso vale também para a próxima ocorrência de uma recorrente paga antes do vencimento.
+- **Importação de faturas do cartão**: separada da importação de extratos. Fatura (OFX ou CSV) só pode ser ligada a um cartão e extrato só a uma conta; o app reconhece o tipo do arquivo e recusa o que vier na opção errada. As compras vão direto para o cartão escolhido, cada compra na fatura do seu mês. Uma compra com o mesmo valor e a mesma data de vencimento de outra já lançada no cartão é marcada como **cobrança duplicada** e não é importada. Pagamentos e estornos do arquivo são ignorados.
 - **Avisos de vencimento**: notificações às 11:30 e 17:30 para faturas e contas que vencem em 2 dias, amanhã, hoje ou que venceram ontem.
 - **Backup**: exportação e importação em JSON, backups automáticos diários em uma pasta escolhida pelo usuário (os 10 mais recentes são mantidos), criptografia opcional com senha e restauração do perfil em uma instalação nova.
 - **Aparência**: tema claro, escuro ou do sistema, e opção de preencher o app com dados de exemplo.

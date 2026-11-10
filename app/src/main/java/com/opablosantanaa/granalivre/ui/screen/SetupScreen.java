@@ -35,7 +35,6 @@ public class SetupScreen extends Screen {
         scroll.postDelayed(() -> scroll.smoothScrollTo(0, target.getBottom()), 250);
     }
 
-    /** O mascote reage ao cadastro: curioso até saber o nome, feliz depois; pula quando a fala muda. */
     private void updateBubble(View view) {
         TextInputEditText name = view.findViewById(R.id.name);
         String typed = name.getText() == null ? "" : name.getText().toString().trim();

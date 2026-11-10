@@ -29,14 +29,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Converte um PDF de extrato ou comprovante em {@link OfxStatement}. Usa o texto do PDF com as posições de cada
- * caractere; se o PDF for só imagem (sem texto), renderiza as páginas e reconhece o texto com OCR no aparelho.
- * Deve rodar fora da thread principal.
- */
 public final class PdfStatementReader {
     private static final int MAX_PAGES = 30;
-    /** Abaixo disso o PDF é tratado como imagem. */
     private static final int MIN_TEXT_CHARS = 40;
     private static final int OCR_WIDTH = 2000;
 
@@ -81,7 +75,6 @@ public final class PdfStatementReader {
         }
     }
 
-    /** OCR das páginas: cada palavra reconhecida vira um "caractere" com a sua caixa, e o layout é refeito igual. */
     private static List<PdfLayout.Line> recognize(Context context, byte[] bytes) throws IOException, OfxException {
         File file = File.createTempFile("extrato", ".pdf", context.getCacheDir());
         TextRecognizer recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
@@ -126,7 +119,6 @@ public final class PdfStatementReader {
             }
         } finally {
             recognizer.close();
-            //noinspection ResultOfMethodCallIgnored
             file.delete();
         }
         return lines;

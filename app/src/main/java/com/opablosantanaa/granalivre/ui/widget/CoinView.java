@@ -10,7 +10,6 @@ import android.view.animation.DecelerateInterpolator;
 
 import com.opablosantanaa.granalivre.ui.FinanceAdvisor;
 
-/** Mascote do assessor: uma moedinha em pixel art que pisca, pula ao toque e muda de cara conforme a dica. */
 public class CoinView extends View {
     private static final String[] BODY = {
             "....oooooo....",
@@ -67,7 +66,6 @@ public class CoinView extends View {
         invalidate();
     }
 
-    /** Cara de curioso (sobrancelha levantada, boca em "o"), usada no cadastro; sobrepõe o humor da dica. */
     public void setCurious(boolean curious) {
         if (this.curious == curious) return;
         this.curious = curious;

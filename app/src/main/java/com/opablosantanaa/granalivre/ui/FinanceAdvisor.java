@@ -14,10 +14,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-/**
- * Assessor da moeda: transforma o histórico de lançamentos em dicas curtas, só com regras locais.
- * As dicas saem ordenadas da mais urgente para a menos urgente.
- */
 public final class FinanceAdvisor {
     public enum Mood { ALERT, WARN, PRAISE, INFO }
 
@@ -31,17 +27,11 @@ public final class FinanceAdvisor {
         }
     }
 
-    /** Fatia dos gastos do mês a partir da qual uma categoria é considerada exagerada. */
     static final float DOMINANT_SHARE = 0.40f;
-    /** Gasto acima da média dos 3 meses anteriores que gera alerta (50% a mais). */
     static final float SPIKE_RATIO = 1.5f;
-    /** Queda em relação à média que vale um elogio (20% a menos). */
     static final float DROP_RATIO = 0.8f;
-    /** Parte da receita guardada que vale um elogio. */
     static final float GOOD_SAVINGS = 0.20f;
-    /** Diferença mínima, em centavos, para uma dica de categoria não ser ruído (R$ 100). */
     static final long MIN_RELEVANT_CENTS = 10_000;
-    /** A partir deste dia o mês corrente já serve para medir a economia; antes disso usa o mês anterior. */
     static final int SAVINGS_CHECK_DAY = 20;
 
     private FinanceAdvisor() {}
@@ -116,7 +106,6 @@ public final class FinanceAdvisor {
                 long avg = value(average, entry.getKey());
                 long spent = entry.getValue();
                 if (avg <= 0 || spent < avg * SPIKE_RATIO || spent - avg < MIN_RELEVANT_CENTS) continue;
-                // sem porcentagens acima de 100%: a partir do dobro, fala em "vezes"
                 float ratio = (float) spent / avg;
                 String how = ratio >= 2f ? times(ratio) : percent(ratio - 1f) + " acima da sua média";
                 warnings.add(new Tip(Mood.WARN, "Os gastos com " + name(categories, entry.getKey()) + " já estão "
@@ -177,7 +166,6 @@ public final class FinanceAdvisor {
         final Map<Long, Long> recurringByCategory = new HashMap<>();
     }
 
-    /** Soma o mês até hoje (lançamentos futuros ainda não aconteceram). */
     private static Totals totals(List<FinancialTransaction> history, YearMonth month, LocalDate today) {
         Totals totals = new Totals();
         for (FinancialTransaction t : history) {
@@ -196,7 +184,6 @@ public final class FinanceAdvisor {
         return totals;
     }
 
-    /** Média mensal de gastos por categoria nos {@code months} meses anteriores a {@code month}. */
     private static Map<Long, Long> average(List<FinancialTransaction> history, YearMonth month, int months,
                                            LocalDate today) {
         Map<Long, Long> sum = new HashMap<>();
@@ -229,7 +216,6 @@ public final class FinanceAdvisor {
         return "Outras despesas";
     }
 
-    /** "mais que o dobro da sua média", "mais que o triplo..." ou "mais de 4 vezes a sua média". */
     private static String times(float ratio) {
         int n = (int) Math.floor(ratio);
         return n == 2 ? "mais que o dobro da sua média" : n == 3 ? "mais que o triplo da sua média"

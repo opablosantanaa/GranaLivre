@@ -26,6 +26,12 @@ public final class OfxParser {
         return parse(decode(bytes));
     }
 
+    public static boolean isOfx(byte[] bytes) {
+        String head = new String(bytes, 0, Math.min(bytes.length, 4096), StandardCharsets.ISO_8859_1)
+                .toUpperCase(Locale.ROOT);
+        return head.contains("<OFX") || head.contains("OFXHEADER");
+    }
+
     static String decode(byte[] bytes) {
         String head = new String(bytes, 0, Math.min(bytes.length, 600), StandardCharsets.ISO_8859_1)
                 .toUpperCase(Locale.ROOT);
@@ -38,7 +44,6 @@ public final class OfxParser {
                         .onUnmappableCharacter(CodingErrorAction.REPORT)
                         .decode(ByteBuffer.wrap(bytes)).toString();
             } catch (CharacterCodingException ignored) {
-                // Arquivo sem declaração confiável: os bancos brasileiros usam windows-1252 nesse caso.
             }
         }
         return new String(bytes, WINDOWS_1252);
@@ -96,7 +101,7 @@ public final class OfxParser {
         return out.toString();
     }
 
-    private static String hash(String text) {
+    static String hash(String text) {
         try {
             byte[] digest = MessageDigest.getInstance("SHA-1").digest(text.getBytes(StandardCharsets.UTF_8));
             StringBuilder out = new StringBuilder();

@@ -25,6 +25,7 @@ import com.google.android.material.materialswitch.MaterialSwitch;
 import com.opablosantanaa.granalivre.R;
 import com.opablosantanaa.granalivre.domain.ofx.OfxStatement;
 import com.opablosantanaa.granalivre.domain.DefaultCategories;
+import com.opablosantanaa.granalivre.entity.Card;
 import com.opablosantanaa.granalivre.entity.Category;
 import com.opablosantanaa.granalivre.relation.AccountWithBalance;
 import com.opablosantanaa.granalivre.repository.RepositoryCallback;
@@ -46,6 +47,7 @@ public class ImportSheet extends BaseSheet {
     private OfxStatement statement;
     private Preview preview;
     private long accountId;
+    private long cardId;
     private View root;
     private View header;
     private final RowsAdapter adapter = new RowsAdapter();
@@ -77,13 +79,12 @@ public class ImportSheet extends BaseSheet {
             return;
         }
         root = view;
-        header(view, R.string.import_title);
+        header(view, statement.creditCard ? R.string.import_title_invoice : R.string.import_title);
         RecyclerView rows = view.findViewById(R.id.rows);
         rows.setLayoutManager(new LinearLayoutManager(requireContext()));
         header = getLayoutInflater().inflate(R.layout.item_import_header, rows, false);
         rows.setAdapter(adapter);
 
-        // OFX traz o código do banco ("0341"); o PDF traz o nome ("Banco do Brasil", "Itaú")
         boolean named = statement.bankId != null && statement.bankId.matches(".*\\p{L}.*");
         String source = statement.bankId != null && statement.accountId != null
                 ? getString(named ? R.string.import_bank_named : R.string.import_bank, statement.bankId, statement.accountId)
@@ -98,14 +99,16 @@ public class ImportSheet extends BaseSheet {
         } else {
             period.setVisibility(View.GONE);
         }
-        header.findViewById(R.id.card_warning).setVisibility(statement.creditCard ? View.VISIBLE : View.GONE);
-
         ChipGroup accounts = header.findViewById(R.id.accounts);
         List<AccountWithBalance> list = vm().accountList.getValue();
-        if (list != null) {
+        List<Card> cards = vm().cardList.getValue();
+        if (!statement.creditCard && list != null) {
             for (AccountWithBalance a : list) {
                 chip(accounts, a.account.getAccount_bank_name(), a.account.getAccount_id());
             }
+        }
+        if (statement.creditCard && cards != null) {
+            for (Card c : cards) chip(accounts, c.getCard_nickname(), -c.getCard_id());
         }
         accounts.setOnCheckedStateChangeListener((group, ids) -> load(checkedTag(accounts)));
         if (accounts.getChildCount() > 0) ((Chip) accounts.getChildAt(0)).setChecked(true);
@@ -115,19 +118,24 @@ public class ImportSheet extends BaseSheet {
         updateButton();
     }
 
-    private void load(long account) {
-        if (account <= 0) return;
-        accountId = account;
+    private void load(long target) {
+        if (target == 0) return;
+        accountId = Math.max(target, 0);
+        cardId = Math.max(-target, 0);
+        preview = null;
+        adapter.notifyDataSetChanged();
         root.findViewById(R.id.save).setEnabled(false);
-        vm().imports.preview(vm().getUserId(), account, statement, new RepositoryCallback<Preview>() {
+        RepositoryCallback<Preview> callback = new RepositoryCallback<Preview>() {
             @Override
             public void onSuccess(Preview result) {
-                if (!isAdded() || account != accountId) return;
+                if (!isAdded() || accountId != Math.max(target, 0) || cardId != Math.max(-target, 0)) return;
                 preview = result;
                 int fresh = 0;
                 for (Row row : preview.rows) if (!row.duplicate) fresh++;
                 int matched = preview.matchedCount();
-                ((TextView) header.findViewById(R.id.counts)).setText(matched == 0
+                ((TextView) header.findViewById(R.id.counts)).setText(cardId > 0
+                        ? getString(R.string.import_counts_card, fresh, preview.rows.size() - fresh)
+                        : matched == 0
                         ? getString(R.string.import_counts, fresh, preview.rows.size() - fresh)
                         : getString(R.string.import_counts_matched, fresh - matched,
                                 preview.rows.size() - fresh, matched));
@@ -139,7 +147,18 @@ public class ImportSheet extends BaseSheet {
             public void onError(Exception e) {
                 fail(root.findViewById(R.id.error), null, e.getMessage());
             }
-        });
+        };
+        if (cardId > 0) vm().imports.previewCard(vm().getUserId(), cardId, statement, callback);
+        else vm().imports.preview(vm().getUserId(), accountId, statement, callback);
+    }
+
+    private int blockLabel(StatementImportRepository.Block block) {
+        switch (block) {
+            case CHARGE_DUPLICATE: return R.string.import_charge_duplicate;
+            case CREDIT: return R.string.import_card_credit;
+            case PAID_INVOICE: return R.string.import_paid_invoice;
+            default: return R.string.import_duplicate;
+        }
     }
 
     private String categoryName(Row row) {
@@ -169,7 +188,7 @@ public class ImportSheet extends BaseSheet {
 
         TextView category = item.findViewById(R.id.category);
         if (row.duplicate) {
-            category.setText(R.string.import_duplicate);
+            category.setText(blockLabel(row.block));
             category.setTextColor(color(R.color.gl_text_secondary));
             category.setOnClickListener(null);
             category.setClickable(false);
@@ -214,6 +233,12 @@ public class ImportSheet extends BaseSheet {
         if (preview == null) return;
         TextView text = header.findViewById(R.id.reconcile_text);
         MaterialSwitch adjust = header.findViewById(R.id.adjust);
+        header.findViewById(R.id.reconcile).setVisibility(cardId > 0 ? View.GONE : View.VISIBLE);
+        if (cardId > 0) {
+            adjust.setChecked(false);
+            updateButton();
+            return;
+        }
         if (statement.ledgerBalanceCents == null || preview.balanceAtLedgerCents == null) {
             text.setText(R.string.import_no_ledger);
             adjust.setVisibility(View.GONE);
@@ -264,8 +289,8 @@ public class ImportSheet extends BaseSheet {
         error.setVisibility(View.GONE);
         boolean adjust = ((MaterialSwitch) header.findViewById(R.id.adjust)).isChecked();
         save.setEnabled(false);
-        vm().imports.commit(vm().getUserId(), accountId, preview.rows, statement.ledgerBalanceCents,
-                statement.ledgerBalanceDate, adjust, new RepositoryCallback<StatementImportRepository.Result>() {
+        RepositoryCallback<StatementImportRepository.Result> callback =
+                new RepositoryCallback<StatementImportRepository.Result>() {
                     @Override
                     public void onSuccess(StatementImportRepository.Result result) {
                         if (!isAdded()) return;
@@ -282,7 +307,13 @@ public class ImportSheet extends BaseSheet {
                     public void onError(Exception e) {
                         fail(error, save, e.getMessage());
                     }
-                });
+                };
+        if (cardId > 0) {
+            vm().imports.commitCard(vm().getUserId(), cardId, preview.rows, callback);
+        } else {
+            vm().imports.commit(vm().getUserId(), accountId, preview.rows, statement.ledgerBalanceCents,
+                    statement.ledgerBalanceDate, adjust, callback);
+        }
     }
 
     private static final class Holder extends RecyclerView.ViewHolder {

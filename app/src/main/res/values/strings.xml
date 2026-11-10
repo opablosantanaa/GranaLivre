@@ -70,6 +70,7 @@
     <string name="moves_transfers">Transferências</string>
     <string name="moves_empty">Nada registrado neste mês.</string>
     <string name="category_filter">Categoria</string>
+    <string name="account_filter">Conta</string>
     <string name="category_filter_all">Todas</string>
     <string name="category_filter_pick_type">Selecione um tipo de movimentação para filtrar as categorias</string>
     <string name="category_filter_transfers">Transferências não têm categoria</string>
@@ -402,8 +403,15 @@
     <string name="transfer_delete_confirm">A transferência de %1$s de %2$s para %3$s será apagada e os saldos recalculados.</string>
     <string name="transfer_deleted">Transferência excluída</string>
     <string name="transaction_not_found">Este lançamento não existe mais.</string>
-    <string name="import_button">Importar extrato (OFX ou PDF)</string>
+    <string name="import_button">Importar extrato ou fatura</string>
     <string name="import_title">Revisar extrato</string>
+    <string name="import_title_invoice">Revisar fatura</string>
+    <string name="import_choose_title">O que você quer importar?</string>
+    <string name="import_kind_statement">Extrato de conta (OFX, CSV ou PDF)</string>
+    <string name="import_kind_invoice">Fatura de cartão (OFX ou CSV)</string>
+    <string name="import_invoice_pdf">Faturas só podem ser importadas em OFX ou CSV.</string>
+    <string name="import_not_invoice">Este arquivo é um extrato, não uma fatura.</string>
+    <string name="import_not_statement">Este arquivo é uma fatura, não um extrato.</string>
     <string name="import_reading">Lendo o extrato…</string>
     <string name="import_too_big">O arquivo tem mais de 15 MB. Exporte um período menor no app do banco.</string>
     <string name="import_read_error">Não foi possível abrir o arquivo.</string>
@@ -413,7 +421,10 @@
     <string name="import_bank">Banco %1$s, conta %2$s</string>
     <string name="import_bank_named">%1$s, conta %2$s</string>
     <string name="import_source_one">%1$s, 1 lançamento</string>
-    <string name="import_card_warning">Este é um extrato de cartão de crédito. Os valores entram como receitas e despesas da conta escolhida.</string>
+    <string name="import_counts_card">Novas: %1$d · Bloqueadas: %2$d</string>
+    <string name="import_charge_duplicate">Cobrança duplicada</string>
+    <string name="import_card_credit">Pagamento ou estorno</string>
+    <string name="import_paid_invoice">Fatura já paga</string>
     <string name="import_target">Importar para</string>
     <string name="import_counts">%1$d novos, %2$d já importados</string>
     <string name="import_counts_matched">%1$d novos, %2$d já importados, %3$d já lançados no app</string>

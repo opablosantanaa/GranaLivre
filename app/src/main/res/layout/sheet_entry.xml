@@ -89,7 +89,6 @@
             app:chipSpacingVertical="4dp"
             app:singleSelection="true" />
 
-        <!-- cartões de crédito ficam numa linha própria, separados das contas -->
         <TextView
             android:id="@+id/card_label"
             style="@style/SheetLabel"
